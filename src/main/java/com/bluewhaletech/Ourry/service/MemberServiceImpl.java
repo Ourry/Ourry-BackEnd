@@ -34,7 +34,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public Long createAccount(MemberRegistrationDTO dto) {
+    public String createAccount(MemberRegistrationDTO dto) {
         /* 이메일 중복 확인 */
         jpaMemberRepository.findByEmail(dto.getEmail())
                 .ifPresent(member -> {
@@ -49,7 +49,8 @@ public class MemberServiceImpl implements MemberService {
                 .phone(dto.getPhone())
                 .role(Role.MEMBER)
                 .build();
-        return memberRepository.save(member);
+        memberRepository.save(member);
+        return "SUCCESS";
     }
 
     @Transactional

@@ -28,10 +28,10 @@ public class MemberController {
      * @return memberId (회원 엔티티 PK)
      */
     @PostMapping("/member/createAccount")
-    public ResponseEntity<MemberIdDTO> createAccount(@RequestBody MemberRegistrationDTO dto) {
-        Long memberId = memberService.createAccount(dto); // 회원가입 성공 시 반환
-        MemberIdDTO data = MemberIdDTO.builder()
-                .memberId(memberId)
+    public ResponseEntity<SuccessResponseDTO> createAccount(@RequestBody MemberRegistrationDTO dto) {
+        String result = memberService.createAccount(dto); // 회원가입 성공 시 반환
+        SuccessResponseDTO data = SuccessResponseDTO.builder()
+                .result(result)
                 .build();
         return ResponseEntity.ok().body(data);
     }
