@@ -43,11 +43,7 @@ public class MemberController {
      */
     @PostMapping("/member/memberLogin")
     public ResponseEntity<JwtDTO> memberLogin(@RequestBody MemberLoginDTO dto) {
-        String jwt = memberService.memberLogin(dto);
-        JwtDTO data = JwtDTO.builder()
-                .jwt(jwt)
-                .build();
-        return ResponseEntity.ok().body(data);
+        return ResponseEntity.ok().body(memberService.memberLogin(dto));
     }
 
     /**
