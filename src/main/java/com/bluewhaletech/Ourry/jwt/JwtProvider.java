@@ -56,7 +56,7 @@ public class JwtProvider {
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
 
-        /* Refresh Token 생성 필요 */
+        /* Refresh Token 생성 */
         String refreshToken = Jwts.builder()
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + refreshTokenExpiration))
@@ -98,8 +98,7 @@ public class JwtProvider {
 
     /* 토큰 Payload 부분에서 email 값 가져오기 */
     public String getEmail(String token) {
-        Jws<Claims> claims = getClaims(token);
-        return claims.getPayload().getSubject();
+        return getClaims(token).getPayload().getSubject();
     }
 
     /* 토큰 만료여부 확인 */

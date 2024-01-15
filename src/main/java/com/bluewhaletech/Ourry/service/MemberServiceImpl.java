@@ -49,6 +49,16 @@ public class MemberServiceImpl implements MemberService {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
 
+        /* 인증코드가 만료됐는지 확인 */
+        if(redisUtil.getAuthenticationCode(dto.getEmail()) == null) {
+            throw new AuthenticationCodeExpirationException("인증코드의 유효시간이 만료됐습니다.");
+        }
+
+        /* 이메일 인증여부 확안 */
+        if(!redisUtil.checkAuthentication(dto.getEmail()).equals("Y")) {
+            throw new AuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
+        }
+
         /* 회원가입 */
         Member member = Member.builder()
                 .email(dto.getEmail())
@@ -77,6 +87,8 @@ public class MemberServiceImpl implements MemberService {
                         member.getEmail(), member.getPassword()
                 )
         );
+
+
 
         /* JWT 발급 */
         return tokenProvider.createToken(authentication);

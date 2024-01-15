@@ -7,6 +7,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public enum MemberRole {
-    USER("사용자"), MEMBER("회원"), ADMIN("관리자");
+    USER("ROLE_USER"), MEMBER("ROLE_MEMBER"), ADMIN("ROLE_ADMIN");
     private final String label;
 }

@@ -4,11 +4,15 @@ import com.bluewhaletech.Ourry.domain.Member;
 import com.bluewhaletech.Ourry.exception.MemberNotFoundException;
 import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
 
 @Component
 public class CustomUserDetailsService implements UserDetailsService {
@@ -27,7 +31,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return CustomUser.builder()
                 .username(member.getEmail())
                 .password(passwordEncoder.encode(member.getPassword()))
-                .roles("ROLE_"+member.getRole().getLabel())
+                .roles(member.getRole().toString())
                 .build();
     }
 }
