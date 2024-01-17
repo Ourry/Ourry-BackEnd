@@ -8,7 +8,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -21,8 +20,17 @@ public class RedisConfig {
     public RedisConnectionFactory redisConnectionFactory() {
         return new LettuceConnectionFactory(host, port);
     }
+
     @Bean
-    public RedisTemplate<String, Map<String, String>> redisTemplate() {
+    public RedisTemplate<String, String> redisEmailAuthenticationTemplate() {
+        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setValueSerializer(new StringRedisSerializer());
+        return redisTemplate;
+    }
+
+    @Bean
+    public RedisTemplate<String, Map<String, String>> redisTokenManagementTemplate() {
         RedisTemplate<String, Map<String, String>> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());

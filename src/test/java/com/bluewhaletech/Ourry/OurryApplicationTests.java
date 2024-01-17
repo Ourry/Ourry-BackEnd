@@ -3,9 +3,11 @@ package com.bluewhaletech.Ourry;
 import com.bluewhaletech.Ourry.domain.Member;
 import com.bluewhaletech.Ourry.domain.MemberRole;
 import com.bluewhaletech.Ourry.dto.JwtDTO;
+import com.bluewhaletech.Ourry.dto.TokenDTO;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
-import com.bluewhaletech.Ourry.util.RedisUtil;
+import com.bluewhaletech.Ourry.service.AuthServiceImpl;
+import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -16,7 +18,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -25,19 +26,20 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.crypto.SecretKey;
-import java.util.Collection;
 import java.util.Date;
 
 @SpringBootTest
 class OurryApplicationTests {
 	@Autowired
-	private RedisUtil redisUtil;
+	private JwtProvider tokenProvider;
 	@Autowired
-	private JwtProvider jwtProvider;
+	private RedisEmailAuthentication redisUtil;
 	@Autowired
 	private AuthenticationManagerBuilder authenticationManagerBuilder;
 	@Autowired
-	MemberRepository memberRepository;
+	private MemberRepository memberRepository;
+	@Autowired
+	private AuthServiceImpl authService;
 
 	@Test
 	void redisTest() {
@@ -71,21 +73,15 @@ class OurryApplicationTests {
 				.build();
 		memberRepository.save(member);
 
-		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-				new UsernamePasswordAuthenticationToken(
-						member.getEmail(), member.getPassword()
-				)
-		);
-
 		//when
-		JwtDTO dto = jwtProvider.createToken(authentication);
+		JwtDTO jwt = authService.issueToken(member);
 
 		//then
-		Assertions.assertThat(dto).isNotNull();
+		Assertions.assertThat(jwt).isNotNull();
 		Jws<Claims> claims = Jwts.parser()
 				.verifyWith(secretKey)
 				.build()
-				.parseSignedClaims(dto.getAccessToken());
+				.parseSignedClaims(jwt.getAccessToken());
 
 		/* Subject(이메일) 비교 */
 		Assertions.assertThat(claims.getPayload().getSubject()).isEqualTo("abc@naver.com");
@@ -110,20 +106,14 @@ class OurryApplicationTests {
 				.build();
 		memberRepository.save(member);
 
-		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-				new UsernamePasswordAuthenticationToken(
-						member.getEmail(), member.getPassword()
-				)
-		);
-
-		JwtDTO dto = jwtProvider.createToken(authentication);
+		JwtDTO jwt = authService.issueToken(member);
 
 		//when
 		Date now = new Date();
 		Date expiration = Jwts.parser()
 				.verifyWith(secretKey)
 				.build()
-				.parseSignedClaims(dto.getAccessToken())
+				.parseSignedClaims(jwt.getAccessToken())
 				.getPayload()
 				.getExpiration();
 
@@ -137,6 +127,7 @@ class OurryApplicationTests {
 	@Transactional
 	@DisplayName("JWT 인증 정보 확인")
 	void checkTokenValidationTest() {
+		//given
 		Member member = Member.builder()
 				.memberId(1L)
 				.email("abc@naver.com")
@@ -147,18 +138,12 @@ class OurryApplicationTests {
 				.build();
 		memberRepository.save(member);
 
-		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-				new UsernamePasswordAuthenticationToken(
-						member.getEmail(), member.getPassword()
-				)
-		);
-
-		JwtDTO dto = jwtProvider.createToken(authentication);
+		JwtDTO jwt = authService.issueToken(member);
 
 		//when
 		String email = "abc@naver.com";
 		GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_USER");
-		Authentication auth = jwtProvider.getAuthentication(dto.getAccessToken());
+		Authentication auth = tokenProvider.getAuthentication(jwt.getAccessToken());
 
 		//then
 		System.out.println("auth.getName() : " + auth.getName() + " == " + email);

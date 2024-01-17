@@ -1,6 +1,6 @@
 package com.bluewhaletech.Ourry.jwt;
 
-import com.bluewhaletech.Ourry.dto.JwtDTO;
+import com.bluewhaletech.Ourry.dto.TokenDTO;
 import com.bluewhaletech.Ourry.security.CustomUser;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -26,12 +26,11 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class JwtProvider {
-    private static final String AUTHORITIES_KEY = "auth";
-    private static final String TOKEN_TYPE = "bearer";
-
     private final SecretKey secretKey;
     private final Long accessTokenExpiration;
     private final Long refreshTokenExpiration;
+
+    private static final String AUTHORITIES_KEY = "auth";
 
     @Autowired
     public JwtProvider(@Value("${jwt.secret}") String secret, @Value("${jwt.atk}") Long accessTokenExpiration, @Value("${jwt.rtk}") Long refreshTokenExpiration) {
@@ -41,8 +40,8 @@ public class JwtProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public JwtDTO createToken(Authentication authentication) {
-        long now = new Date().getTime();
+    public TokenDTO createAccessToken(Authentication authentication, Long now) {
+        /* 인증(Authentication) 정보로부터 권한 목록 불러오기 */
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
@@ -56,18 +55,22 @@ public class JwtProvider {
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
 
-        /* Refresh Token 생성 */
+        return TokenDTO.builder()
+                .token(accessToken)
+                .expiration(accessTokenExpiration)
+                .build();
+    }
+
+    public TokenDTO createRefreshToken(Long now) {
         String refreshToken = Jwts.builder()
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + refreshTokenExpiration))
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
 
-        return JwtDTO.builder()
-                .type(TOKEN_TYPE)
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .accessTokenExpiration(new Date(now + accessTokenExpiration).getTime())
+        return TokenDTO.builder()
+                .token(refreshToken)
+                .expiration(refreshTokenExpiration)
                 .build();
     }
 
