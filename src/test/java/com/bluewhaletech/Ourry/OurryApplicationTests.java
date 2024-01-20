@@ -3,10 +3,9 @@ package com.bluewhaletech.Ourry;
 import com.bluewhaletech.Ourry.domain.Member;
 import com.bluewhaletech.Ourry.domain.MemberRole;
 import com.bluewhaletech.Ourry.dto.JwtDTO;
-import com.bluewhaletech.Ourry.dto.TokenDTO;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
-import com.bluewhaletech.Ourry.service.AuthServiceImpl;
+import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -38,8 +37,6 @@ class OurryApplicationTests {
 	private AuthenticationManagerBuilder authenticationManagerBuilder;
 	@Autowired
 	private MemberRepository memberRepository;
-	@Autowired
-	private AuthServiceImpl authService;
 
 	@Test
 	void redisTest() {
@@ -73,8 +70,12 @@ class OurryApplicationTests {
 				.build();
 		memberRepository.save(member);
 
+		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+		);
+
 		//when
-		JwtDTO jwt = authService.issueToken(member);
+		JwtDTO jwt = tokenProvider.createToken(authentication);
 
 		//then
 		Assertions.assertThat(jwt).isNotNull();
@@ -106,7 +107,11 @@ class OurryApplicationTests {
 				.build();
 		memberRepository.save(member);
 
-		JwtDTO jwt = authService.issueToken(member);
+		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+		);
+
+		JwtDTO jwt = tokenProvider.createToken(authentication);
 
 		//when
 		Date now = new Date();
@@ -138,7 +143,11 @@ class OurryApplicationTests {
 				.build();
 		memberRepository.save(member);
 
-		JwtDTO jwt = authService.issueToken(member);
+		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+		);
+
+		JwtDTO jwt = tokenProvider.createToken(authentication);
 
 		//when
 		String email = "abc@naver.com";
@@ -148,7 +157,7 @@ class OurryApplicationTests {
 		//then
 		System.out.println("auth.getName() : " + auth.getName() + " == " + email);
 		Assertions.assertThat(auth.getName()).isEqualTo(email);
-		System.out.println("auth.getAuthorities() : " + auth.getAuthorities() + " == " + authority);
+		System.out.println("auth.getAuthorities() : " + auth.getAuthorities().toString() + " == " + authority);
 		Assertions.assertThat(auth.getAuthorities()).isEqualTo(authority);
 	}
 }

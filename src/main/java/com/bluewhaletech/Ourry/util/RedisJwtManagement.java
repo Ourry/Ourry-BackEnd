@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 
 @Component
-public class RedisTokenManagement {
+public class RedisJwtManagement {
     private final StringRedisTemplate redisTemplate;
 
     @Autowired
-    public RedisTokenManagement(StringRedisTemplate redisTemplate) {
+    public RedisJwtManagement(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

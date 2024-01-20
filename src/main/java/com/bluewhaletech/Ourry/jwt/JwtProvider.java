@@ -1,6 +1,6 @@
 package com.bluewhaletech.Ourry.jwt;
 
-import com.bluewhaletech.Ourry.dto.TokenDTO;
+import com.bluewhaletech.Ourry.dto.JwtDTO;
 import com.bluewhaletech.Ourry.security.CustomUser;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,6 +32,7 @@ public class JwtProvider {
     private final Long refreshTokenExpiration;
 
     private static final String AUTHORITIES_KEY = "auth";
+    private static final String TOKEN_TYPE = "Bearer";
 
     @Autowired
     public JwtProvider(@Value("${jwt.secret}") String secret, @Value("${jwt.atk}") Long accessTokenExpiration, @Value("${jwt.rtk}") Long refreshTokenExpiration) {
@@ -40,7 +42,9 @@ public class JwtProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public TokenDTO createAccessToken(Authentication authentication, Long now) {
+    public JwtDTO createToken(Authentication authentication) {
+        /* 오늘 날짜를 시간으로 변경해서 가져옴 */
+        long now = new Date().getTime();
         /* 인증(Authentication) 정보로부터 권한 목록 불러오기 */
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -55,24 +59,55 @@ public class JwtProvider {
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
 
-        return TokenDTO.builder()
-                .token(accessToken)
-                .expiration(accessTokenExpiration)
-                .build();
-    }
-
-    public TokenDTO createRefreshToken(Long now) {
+        /* Refresh Token 생성 */
         String refreshToken = Jwts.builder()
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + refreshTokenExpiration))
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
 
-        return TokenDTO.builder()
-                .token(refreshToken)
-                .expiration(refreshTokenExpiration)
+        return JwtDTO.builder()
+                .tokenType(TOKEN_TYPE)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .accessTokenExpiration(accessTokenExpiration)
+                .refreshTokenExpiration(refreshTokenExpiration)
                 .build();
     }
+
+//    public TokenDTO createAccessToken(Authentication authentication, Long now) {
+//        /* 인증(Authentication) 정보로부터 권한 목록 불러오기 */
+//        String authorities = authentication.getAuthorities().stream()
+//                .map(GrantedAuthority::getAuthority)
+//                .collect(Collectors.joining(","));
+//
+//        /* Access Token 생성 */
+//        String accessToken = Jwts.builder()
+//                .subject(authentication.getName())
+//                .claim(AUTHORITIES_KEY, authorities)
+//                .issuedAt(new Date(now))
+//                .expiration(new Date(now + accessTokenExpiration))
+//                .signWith(secretKey, Jwts.SIG.HS256)
+//                .compact();
+//
+//        return TokenDTO.builder()
+//                .token(accessToken)
+//                .expiration(accessTokenExpiration)
+//                .build();
+//    }
+
+//    public TokenDTO createRefreshToken(Long now) {
+//        String refreshToken = Jwts.builder()
+//                .issuedAt(new Date(now))
+//                .expiration(new Date(now + refreshTokenExpiration))
+//                .signWith(secretKey, Jwts.SIG.HS256)
+//                .compact();
+//
+//        return TokenDTO.builder()
+//                .token(refreshToken)
+//                .expiration(refreshTokenExpiration)
+//                .build();
+//    }
 
     private Jws<Claims> getClaims(String token) {
         return Jwts.parser()
@@ -124,8 +159,8 @@ public class JwtProvider {
             log.info("잘못된 JWT 서명입니다.");
         } catch (ExpiredJwtException e) {
             log.info("만료된 JWT 토큰입니다.");
-        } catch (UnsupportedJwtException e) {
-            log.info("지원되지 않는 JWT 토큰입니다.");
+        }catch (BadCredentialsException | UnsupportedJwtException e) {
+            log.info("유효하지 않거나 지원되지 않는 JWT 토큰입니다.");
         } catch (IllegalArgumentException e) {
             log.info("올바르지 않는 JWT 토큰 형식입니다.");
         }

@@ -8,7 +8,7 @@ import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
-import com.bluewhaletech.Ourry.util.RedisTokenManagement;
+import com.bluewhaletech.Ourry.util.RedisJwtManagement;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,21 +23,25 @@ import java.util.Random;
 
 @Service
 public class MemberServiceImpl implements MemberService {
-    private final AuthServiceImpl authService;
+    private final JwtProvider tokenProvider;
     private final MailServiceImpl mailService;
     private final PasswordEncoder passwordEncoder;
     private final MemberRepository memberRepository;
     private final JpaMemberRepository jpaMemberRepository;
+    private final RedisJwtManagement redisJwtManagement;
     private final RedisEmailAuthentication redisEmailAuthentication;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Autowired
-    public MemberServiceImpl(AuthServiceImpl authService, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisEmailAuthentication redisEmailAuthentication) {
-        this.authService = authService;
+    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisJwtManagement redisJwtManagement, RedisEmailAuthentication redisEmailAuthentication, AuthenticationManagerBuilder authenticationManagerBuilder) {
+        this.tokenProvider = tokenProvider;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
         this.memberRepository = memberRepository;
         this.jpaMemberRepository = jpaMemberRepository;
+        this.redisJwtManagement = redisJwtManagement;
         this.redisEmailAuthentication = redisEmailAuthentication;
+        this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
     @Transactional
@@ -48,7 +52,7 @@ public class MemberServiceImpl implements MemberService {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
 
-        /* 인증코드가 만료됐는지 확인 */
+        /* 이메일 인증 코드가 만료됐는지 확인 */
         if(redisEmailAuthentication.getAuthenticationCode(dto.getEmail()) == null) {
             throw new AuthenticationCodeExpirationException("인증코드의 유효시간이 만료됐습니다.");
         }
@@ -73,15 +77,26 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public JwtDTO memberLogin(MemberLoginDTO dto) {
         /* 이메일 유효성 확인 */
-        Member member = jpaMemberRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new EmailIncorrectException("이메일 주소가 올바르지 않습니다."));
+        Member member = jpaMemberRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new EmailIncorrectException("이메일 주소가 올바르지 않습니다."));
 
         /* 비밀번호 일치 확인 */
         if(!passwordEncoder.matches(dto.getPassword(), member.getPassword())) {
             throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
         }
 
+        /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 */
+        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+                new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+        );
+
         /* JWT 발급 */
-        return authService.issueToken(member);
+        JwtDTO token = tokenProvider.createToken(authentication);
+
+        /* Redis 내부에 Refresh Token 저장 */
+        redisJwtManagement.storeRefreshToken(member.getEmail(), token.getRefreshToken(), token.getRefreshTokenExpiration());
+
+        return token;
     }
 
     @Transactional
