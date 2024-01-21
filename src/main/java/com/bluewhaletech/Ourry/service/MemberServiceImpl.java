@@ -11,6 +11,7 @@ import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.repository.RedisRefreshTokenRepository;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -24,6 +25,10 @@ import java.util.Random;
 
 @Service
 public class MemberServiceImpl implements MemberService {
+    private static final String AUTHORIZATION_KEY = "Authorization";
+    private static final String REFRESH_KEY = "Refresh";
+    private static final String TOKEN_TYPE = "Bearer";
+
     private final JwtProvider tokenProvider;
     private final MailServiceImpl mailService;
     private final PasswordEncoder passwordEncoder;
@@ -71,7 +76,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public JwtDTO memberLogin(MemberLoginDTO dto) {
+    public String memberLogin(MemberLoginDTO dto, HttpServletResponse response) {
         /* 이메일 유효성 확인 */
         Member member = jpaMemberRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new EmailIncorrectException("이메일 주소가 올바르지 않습니다."));
@@ -90,18 +95,26 @@ public class MemberServiceImpl implements MemberService {
         JwtDTO token = tokenProvider.createToken(authentication);
 
         /* Redis 내부에 Refresh Token 저장 */
+//        RefreshToken refreshToken = RefreshToken.builder()
+//                .memberId(member.getMemberId())
+//                .tokenValue(token.getRefreshToken())
+//                .expiration(token.getRefreshTokenExpiration())
+//                .build();
         RefreshToken refreshToken = RefreshToken.builder()
-                .memberId(member.getMemberId())
                 .tokenValue(token.getRefreshToken())
                 .expiration(token.getRefreshTokenExpiration())
                 .build();
         redisRefreshTokenRepository.save(refreshToken);
 
-        return token;
+        /* Response Header 안에 Access Token & Refresh Token 넣기 */
+        response.setHeader(AUTHORIZATION_KEY, TOKEN_TYPE+" "+token.getAccessToken());
+        response.setHeader(REFRESH_KEY, TOKEN_TYPE+" "+token.getRefreshToken());
+
+        return "SUCCESS";
     }
 
     @Transactional
-    public JwtDTO reissueToken(TokenRequestDTO dto) {
+    public String reissueToken(TokenRequestDTO dto, HttpServletResponse response) {
         /* Refresh Token 형식 확인 */
 //        if(!tokenProvider.validateToken(dto.getRefreshToken())) {
 //            throw new RuntimeException("잘못된 JWT 토큰 형식입니다.");
@@ -116,7 +129,9 @@ public class MemberServiceImpl implements MemberService {
         Authentication authentication = tokenProvider.getAuthentication(dto.getAccessToken());
 
         /* Redis 내부에 Refresh Token 존재하는지 확인 */
-        RefreshToken refreshToken = redisRefreshTokenRepository.findByMemberId(dto.getMemberId())
+//        RefreshToken refreshToken = redisRefreshTokenRepository.findByMemberId(dto.getMemberId())
+//                .orElseThrow(() -> new JwtTokenNotFoundException("Refresh Token이 존재하지 않습니다."));
+        RefreshToken refreshToken = redisRefreshTokenRepository.findByRefreshToken(dto.getRefreshToken())
                 .orElseThrow(() -> new JwtTokenNotFoundException("Refresh Token이 존재하지 않습니다."));
 
         /* Redis에 저장된 Refresh Token 정보와 요청으로부터 받아온 Refresh Token 정보가 일치하는지 확인 */
@@ -128,14 +143,22 @@ public class MemberServiceImpl implements MemberService {
         JwtDTO token = tokenProvider.createToken(authentication);
 
         /* Redis 내부에 Refresh Token 갱신 */
+//        RefreshToken newRefreshToken = RefreshToken.builder()
+//                .memberId(dto.getMemberId())
+//                .tokenValue(token.getRefreshToken())
+//                .expiration(token.getRefreshTokenExpiration())
+//                .build();
         RefreshToken newRefreshToken = RefreshToken.builder()
-                .memberId(dto.getMemberId())
                 .tokenValue(token.getRefreshToken())
                 .expiration(token.getRefreshTokenExpiration())
                 .build();
         redisRefreshTokenRepository.save(newRefreshToken);
 
-        return token;
+        /* Response Header 안에 Access Token & Refresh Token 넣기 */
+        response.setHeader(AUTHORIZATION_KEY, TOKEN_TYPE+" "+token.getAccessToken());
+        response.setHeader(REFRESH_KEY, TOKEN_TYPE+" "+token.getRefreshToken());
+
+        return "SUCCESS";
     }
 
     @Transactional

@@ -21,7 +21,8 @@ import java.io.IOException;
 @Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final String AUTHORITIES_KEY = "Authorization";
+    private static final String AUTHORIZATION_KEY = "Authorization";
+    private static final String REFRESH_KEY = "Refresh";
     private static final String TOKEN_TYPE = "Bearer";
 
     private final JwtProvider tokenProvider;
@@ -34,7 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         /* 클라이언트가 보낸 요청으로부터 Access Token 불러오기 */
-        String accessToken = resolveToken(request);
+        String accessToken = resolveToken(request, AUTHORIZATION_KEY);
+        String refreshToken = resolveToken(request, REFRESH_KEY);
         /* Access Token이 유효하면 인증(Authentication) 정보를 가져와서 SecurityContext에 저장  */
         if(StringUtils.hasText(accessToken) && tokenProvider.validateToken(accessToken)) {
             Authentication authentication = tokenProvider.getAuthentication(accessToken);
@@ -43,8 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader(AUTHORITIES_KEY);
+    private String resolveToken(HttpServletRequest request, String header) {
+        String bearerToken = request.getHeader(header);
         if(StringUtils.hasText(bearerToken) && bearerToken.startsWith(TOKEN_TYPE)) {
             return bearerToken.substring(7);
         }

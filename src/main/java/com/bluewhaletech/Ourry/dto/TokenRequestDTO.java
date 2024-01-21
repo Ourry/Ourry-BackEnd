@@ -6,9 +6,9 @@ import lombok.Getter;
 
 @Getter
 public class TokenRequestDTO {
-    @NotBlank
-    @JsonSetter("memberId")
-    private Long memberId;
+//    @NotBlank
+//    @JsonSetter("memberId")
+//    private Long memberId;
     @NotBlank
     @JsonSetter("accessToken")
     private String accessToken;

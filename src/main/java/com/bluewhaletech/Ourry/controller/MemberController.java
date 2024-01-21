@@ -3,6 +3,7 @@ package com.bluewhaletech.Ourry.controller;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 
 @Slf4j
 @Controller
@@ -42,8 +44,11 @@ public class MemberController {
      * @return jwt (JWT)
      */
     @PostMapping("/member/memberLogin")
-    public ResponseEntity<JwtDTO> memberLogin(@RequestBody MemberLoginDTO dto) {
-        return ResponseEntity.ok().body(memberService.memberLogin(dto));
+    public ResponseEntity<SuccessResponseDTO> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
+        SuccessResponseDTO data = SuccessResponseDTO.builder()
+                .result(memberService.memberLogin(dto, response))
+                .build();
+        return ResponseEntity.ok().body(data);
     }
 
     /**
@@ -52,8 +57,11 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/reissueToken")
-    public ResponseEntity<JwtDTO> reissueToken(@RequestBody TokenRequestDTO dto) {
-        return ResponseEntity.ok().body(memberService.reissueToken(dto));
+    public ResponseEntity<SuccessResponseDTO> reissueToken(@RequestBody TokenRequestDTO dto, HttpServletResponse response) {
+        SuccessResponseDTO data = SuccessResponseDTO.builder()
+                .result(memberService.reissueToken(dto, response))
+                .build();
+        return ResponseEntity.ok().body(data);
     }
 
     /**

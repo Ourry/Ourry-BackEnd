@@ -7,6 +7,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class JwtProvider {
     private final Long accessTokenExpiration;
     private final Long refreshTokenExpiration;
 
-    private static final String AUTHORITIES_KEY = "Authorization";
+    private static final String AUTHORIZATION_KEY = "Authorization";
     private static final String TOKEN_TYPE = "Bearer";
 
     @Autowired
@@ -54,7 +55,7 @@ public class JwtProvider {
         /* Access Token 생성 */
         String accessToken = Jwts.builder()
                 .subject(authentication.getName())
-                .claim(AUTHORITIES_KEY, authorities)
+                .claim(AUTHORIZATION_KEY, authorities)
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + accessTokenExpiration))
                 .signWith(secretKey, Jwts.SIG.HS256)
@@ -86,13 +87,13 @@ public class JwtProvider {
     /* 토큰 복호화를 통한 인증(Authentication) 정보 가져오기 */
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token).getPayload();
-        if(claims.get(AUTHORITIES_KEY) == null) {
+        if(claims.get(AUTHORIZATION_KEY) == null) {
             throw new AuthorizationNotFoundException("권한 정보가 존재하지 않는 토큰입니다");
         }
 
         /* 권한(Authority) 정보 가져오기 */
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                Arrays.stream(claims.get(AUTHORIZATION_KEY).toString().split(","))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
