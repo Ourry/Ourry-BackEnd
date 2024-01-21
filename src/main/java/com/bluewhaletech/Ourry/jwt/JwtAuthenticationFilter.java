@@ -21,7 +21,7 @@ import java.io.IOException;
 @Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final String AUTHORITIES_KEY = "auth";
+    private static final String AUTHORITIES_KEY = "Authorization";
     private static final String TOKEN_TYPE = "Bearer";
 
     private final JwtProvider tokenProvider;

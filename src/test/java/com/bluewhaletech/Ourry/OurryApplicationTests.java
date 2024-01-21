@@ -5,7 +5,6 @@ import com.bluewhaletech.Ourry.domain.MemberRole;
 import com.bluewhaletech.Ourry.dto.JwtDTO;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
-import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;

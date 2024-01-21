@@ -47,6 +47,16 @@ public class MemberController {
     }
 
     /**
+     * JWT Token 재발급 API
+     * @param dto
+     * @return
+     */
+    @PostMapping("/member/reissueToken")
+    public ResponseEntity<JwtDTO> reissueToken(@RequestBody TokenRequestDTO dto) {
+        return ResponseEntity.ok().body(memberService.reissueToken(dto));
+    }
+
+    /**
      * 인증코드 발송 API
      * @param dto
      * @return code (이메일 인증 코드)

@@ -52,13 +52,8 @@ public class MemberServiceImpl implements MemberService {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
 
-        /* 이메일 인증 코드가 만료됐는지 확인 */
-        if(redisEmailAuthentication.getAuthenticationCode(dto.getEmail()) == null) {
-            throw new AuthenticationCodeExpirationException("인증코드의 유효시간이 만료됐습니다.");
-        }
-
         /* 이메일 인증여부 확안 */
-        if(!redisEmailAuthentication.checkAuthentication(dto.getEmail()).equals("Y")) {
+        if(redisEmailAuthentication.getAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(dto.getEmail()).equals("Y")) {
             throw new AuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
         }
 
@@ -90,7 +85,7 @@ public class MemberServiceImpl implements MemberService {
                 new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
         );
 
-        /* JWT 발급 */
+        /* JWT 토큰 발급 */
         JwtDTO token = tokenProvider.createToken(authentication);
 
         /* Redis 내부에 Refresh Token 저장 */
@@ -100,9 +95,40 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
+    public JwtDTO reissueToken(TokenRequestDTO dto) {
+        /* Refresh Token 형식 확인 */
+        if(!tokenProvider.validateToken(dto.getRefreshToken())) {
+            throw new RuntimeException("잘못된 JWT 토큰 형식입니다.");
+        };
+
+        /* Refresh Token 만료여부 확인 */
+        if(!tokenProvider.checkTokenExpired(dto.getRefreshToken())) {
+            throw new JwtTokenNotExpiredException("Refresh Token이 만료되지 않았습니다. 다시 시도해주세요.");
+        }
+
+        /* Access Token으로부터 회원 E-Mail 가져오기 */
+        Authentication authentication = tokenProvider.getAuthentication(dto.getAccessToken());
+
+        /* Redis에 저장된 Refresh Token 정보와 요청으로부터 받아온 Refresh Token 정보가 일치하는지 확인 */
+        String refreshToken = redisJwtManagement.getRefreshToken(authentication.getName());
+        if(!refreshToken.equals(dto.getRefreshToken())) {
+            throw new JwtTokenMismatchException("Refresh Token 정보가 일치하지 않습니다.");
+        }
+
+        /* 신규 JWT 토큰 생성 */
+        JwtDTO newToken = tokenProvider.createToken(authentication);
+
+        /* Redis 내부에 Refresh Token 갱신 */
+        redisJwtManagement.storeRefreshToken(authentication.getName(), newToken.getRefreshToken(), newToken.getRefreshTokenExpiration());
+
+        return newToken;
+    }
+
+    @Transactional
     public String sendAuthenticationCode(EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
-        /* 인증코드 유효기간 5분으로 설정 */
+        /* 인증코드 생성 및 유효기간 5분으로 설정 */
         String code = createRandomCode();
+        /* Redis 내부에 생성한 인증코드 저장 */
         redisEmailAuthentication.setAuthenticationExpire(dto.getEmail(), code, 5L);
 
         String text = "";
@@ -118,29 +144,28 @@ public class MemberServiceImpl implements MemberService {
                 .text(text)
                 .build();
 
-        /* 회원가입 시 등록한 이메일로 인증코드 발송 */
+        /* 입력한 이메일로 인증코드 발송 */
         mailService.sendMail(data);
         return "SUCCESS";
     }
 
     @Transactional
     public String emailAuthentication(EmailAuthenticationDTO dto) {
-        /* 이메일(회원) 존재 확인 */
-        Member member = jpaMemberRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         /* 회원 이메일로 전송된 인증코드 */
-        String code = redisEmailAuthentication.getAuthenticationCode(member.getEmail());
+        String code = redisEmailAuthentication.getAuthenticationCode(dto.getEmail());
 
-        /* 인증코드가 만료됐는지 확인 */
+        /* Redis 내부에 이메일이 존재하는지 확인 */
         if(code == null) {
-            throw new AuthenticationCodeExpirationException("인증코드의 유효시간이 만료됐습니다.");
+            throw new MemberNotFoundException("등록되지 않은 이메일입니다.");
         }
+
         /* 입력한 인증코드와 발송된 인증코드 값 비교 */
         if(!code.equals(dto.getCode())) {
             throw new AuthenticationCodeMismatchException("이메일 인증코드가 일치하지 않습니다.");
         }
 
         /* 이메일 인증 완료 처리 */
-        redisEmailAuthentication.setAuthenticationComplete(member.getEmail());
+        redisEmailAuthentication.setAuthenticationComplete(dto.getEmail());
         return "SUCCESS";
     }
 
@@ -149,13 +174,8 @@ public class MemberServiceImpl implements MemberService {
         /* 이메일(회원) 존재 확인 */
         Member member = jpaMemberRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
 
-        /* 인증코드가 만료됐는지 확인 */
-        if(redisEmailAuthentication.getAuthenticationCode(member.getEmail()) == null) {
-            throw new AuthenticationCodeExpirationException("인증코드의 유효시간이 만료됐습니다.");
-        }
-
         /* 이메일 인증여부 확안 */
-        if(!redisEmailAuthentication.checkAuthentication(member.getEmail()).equals("Y")) {
+        if(redisEmailAuthentication.getAuthenticationCode(member.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(member.getEmail()).equals("Y")) {
             throw new AuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
         }
 

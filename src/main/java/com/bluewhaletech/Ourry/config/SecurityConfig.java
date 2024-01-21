@@ -72,6 +72,7 @@ public class SecurityConfig {
                 .requestMatchers("/member/sendAuthenticationCode").permitAll()
                 .requestMatchers("/member/emailAuthentication").permitAll()
                 .requestMatchers("/member/passwordReset").permitAll()
+                .requestMatchers("/member/reissueToken").permitAll()
                 .anyRequest().authenticated() // 위 URL을 제외한 나머지 요청에 대해 인증 설정
         );
         return http.build();
