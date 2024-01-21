@@ -27,9 +27,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Member member = jpaMemberRepository.findByEmail(email).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
+        Member member = jpaMemberRepository.findByEmail(email)
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         return CustomUser.builder()
-                .username(member.getEmail())
+                .username(email)
                 .password(passwordEncoder.encode(member.getPassword()))
                 .roles(member.getRole().toString())
                 .build();

@@ -45,7 +45,7 @@ public class JwtProvider {
 
     public JwtDTO createToken(Authentication authentication) {
         /* 오늘 날짜를 시간으로 변경해서 가져옴 */
-        long now = new Date().getTime();
+        long now = new Date(System.currentTimeMillis()).getTime();
         /* 인증(Authentication) 정보로부터 권한 목록 불러오기 */
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -101,22 +101,6 @@ public class JwtProvider {
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
-    /* 토큰 Payload 부분에서 email 값 가져오기 */
-    public String getEmail(String token) {
-        return getClaims(token).getPayload().getSubject();
-    }
-
-    /* 토큰 만료여부 확인 */
-    public boolean checkTokenExpired(String token) {
-        try {
-            Jws<Claims> claims = getClaims(token);
-            return claims.getPayload().getExpiration().before(new Date());
-        } catch (ExpiredJwtException e) {
-            log.info("만료된 JWT 토큰입니다.");
-            return false;
-        }
-    }
-
     /* 토큰 유효성 체크 */
     public boolean validateToken(String token) {
         try {
@@ -124,6 +108,8 @@ public class JwtProvider {
             return true;
         } catch (SecurityException | MalformedJwtException e) {
             log.info("잘못된 JWT 서명입니다.");
+        } catch (ExpiredJwtException e) {
+            log.info("만료된 JWT 토큰입니다.");
         } catch (BadCredentialsException | UnsupportedJwtException e) {
             log.info("유효하지 않거나 지원되지 않는 JWT 토큰입니다.");
         } catch (IllegalArgumentException e) {

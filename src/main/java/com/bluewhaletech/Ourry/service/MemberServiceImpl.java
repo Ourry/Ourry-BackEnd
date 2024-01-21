@@ -2,13 +2,14 @@ package com.bluewhaletech.Ourry.service;
 
 import com.bluewhaletech.Ourry.domain.Member;
 import com.bluewhaletech.Ourry.domain.MemberRole;
+import com.bluewhaletech.Ourry.domain.RefreshToken;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.exception.*;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
+import com.bluewhaletech.Ourry.repository.RedisRefreshTokenRepository;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
-import com.bluewhaletech.Ourry.util.RedisJwtManagement;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,19 +29,19 @@ public class MemberServiceImpl implements MemberService {
     private final PasswordEncoder passwordEncoder;
     private final MemberRepository memberRepository;
     private final JpaMemberRepository jpaMemberRepository;
-    private final RedisJwtManagement redisJwtManagement;
     private final RedisEmailAuthentication redisEmailAuthentication;
+    private final RedisRefreshTokenRepository redisRefreshTokenRepository;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Autowired
-    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisJwtManagement redisJwtManagement, RedisEmailAuthentication redisEmailAuthentication, AuthenticationManagerBuilder authenticationManagerBuilder) {
+    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisEmailAuthentication redisEmailAuthentication, RedisRefreshTokenRepository redisRefreshTokenRepository, AuthenticationManagerBuilder authenticationManagerBuilder) {
         this.tokenProvider = tokenProvider;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
         this.memberRepository = memberRepository;
         this.jpaMemberRepository = jpaMemberRepository;
-        this.redisJwtManagement = redisJwtManagement;
         this.redisEmailAuthentication = redisEmailAuthentication;
+        this.redisRefreshTokenRepository = redisRefreshTokenRepository;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
@@ -89,7 +90,12 @@ public class MemberServiceImpl implements MemberService {
         JwtDTO token = tokenProvider.createToken(authentication);
 
         /* Redis 내부에 Refresh Token 저장 */
-        redisJwtManagement.storeRefreshToken(member.getEmail(), token.getRefreshToken(), token.getRefreshTokenExpiration());
+        RefreshToken refreshToken = RefreshToken.builder()
+                .memberId(member.getMemberId())
+                .tokenValue(token.getRefreshToken())
+                .expiration(token.getRefreshTokenExpiration())
+                .build();
+        redisRefreshTokenRepository.save(refreshToken);
 
         return token;
     }
@@ -97,31 +103,39 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public JwtDTO reissueToken(TokenRequestDTO dto) {
         /* Refresh Token 형식 확인 */
-        if(!tokenProvider.validateToken(dto.getRefreshToken())) {
-            throw new RuntimeException("잘못된 JWT 토큰 형식입니다.");
-        };
+//        if(!tokenProvider.validateToken(dto.getRefreshToken())) {
+//            throw new RuntimeException("잘못된 JWT 토큰 형식입니다.");
+//        }
 
-        /* Refresh Token 만료여부 확인 */
-        if(!tokenProvider.checkTokenExpired(dto.getRefreshToken())) {
-            throw new JwtTokenNotExpiredException("Refresh Token이 만료되지 않았습니다. 다시 시도해주세요.");
-        }
+//        /* Refresh Token 만료여부 확인 */
+//        if(!tokenProvider.checkTokenExpired(dto.getRefreshToken())) {
+//            throw new JwtTokenNotExpiredException("Refresh Token이 만료되지 않았습니다. 다시 시도해주세요.");
+//        }
 
-        /* Access Token으로부터 회원 E-Mail 가져오기 */
+        /* Access Token에서 인증(Authentication) 정보 가져오기 */
         Authentication authentication = tokenProvider.getAuthentication(dto.getAccessToken());
 
+        /* Redis 내부에 Refresh Token 존재하는지 확인 */
+        RefreshToken refreshToken = redisRefreshTokenRepository.findByMemberId(dto.getMemberId())
+                .orElseThrow(() -> new JwtTokenNotFoundException("Refresh Token이 존재하지 않습니다."));
+
         /* Redis에 저장된 Refresh Token 정보와 요청으로부터 받아온 Refresh Token 정보가 일치하는지 확인 */
-        String refreshToken = redisJwtManagement.getRefreshToken(authentication.getName());
-        if(!refreshToken.equals(dto.getRefreshToken())) {
+        if(!refreshToken.getTokenValue().equals(dto.getRefreshToken())) {
             throw new JwtTokenMismatchException("Refresh Token 정보가 일치하지 않습니다.");
         }
 
         /* 신규 JWT 토큰 생성 */
-        JwtDTO newToken = tokenProvider.createToken(authentication);
+        JwtDTO token = tokenProvider.createToken(authentication);
 
         /* Redis 내부에 Refresh Token 갱신 */
-        redisJwtManagement.storeRefreshToken(authentication.getName(), newToken.getRefreshToken(), newToken.getRefreshTokenExpiration());
+        RefreshToken newRefreshToken = RefreshToken.builder()
+                .memberId(dto.getMemberId())
+                .tokenValue(token.getRefreshToken())
+                .expiration(token.getRefreshTokenExpiration())
+                .build();
+        redisRefreshTokenRepository.save(newRefreshToken);
 
-        return newToken;
+        return token;
     }
 
     @Transactional
