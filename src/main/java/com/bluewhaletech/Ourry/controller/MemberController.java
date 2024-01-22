@@ -3,6 +3,7 @@ package com.bluewhaletech.Ourry.controller;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Optional;
 
 @Slf4j
 @Controller
@@ -30,9 +30,9 @@ public class MemberController {
      * @return memberId (회원 엔티티 PK)
      */
     @PostMapping("/member/createAccount")
-    public ResponseEntity<SuccessResponseDTO> createAccount(@RequestBody MemberRegistrationDTO dto) {
+    public ResponseEntity<SuccessResponse> createAccount(@RequestBody MemberRegistrationDTO dto) {
         String result = memberService.createAccount(dto); // 회원가입 성공 시 반환
-        SuccessResponseDTO data = SuccessResponseDTO.builder()
+        SuccessResponse data = SuccessResponse.builder()
                 .result(result)
                 .build();
         return ResponseEntity.ok().body(data);
@@ -44,8 +44,8 @@ public class MemberController {
      * @return jwt (JWT)
      */
     @PostMapping("/member/memberLogin")
-    public ResponseEntity<SuccessResponseDTO> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
-        SuccessResponseDTO data = SuccessResponseDTO.builder()
+    public ResponseEntity<SuccessResponse> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
+        SuccessResponse data = SuccessResponse.builder()
                 .result(memberService.memberLogin(dto, response))
                 .build();
         return ResponseEntity.ok().body(data);
@@ -57,9 +57,9 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/reissueToken")
-    public ResponseEntity<SuccessResponseDTO> reissueToken(@RequestBody TokenRequestDTO dto, HttpServletResponse response) {
-        SuccessResponseDTO data = SuccessResponseDTO.builder()
-                .result(memberService.reissueToken(dto, response))
+    public ResponseEntity<SuccessResponse> reissueToken(HttpServletRequest request, HttpServletResponse response) {
+        SuccessResponse data = SuccessResponse.builder()
+                .result(memberService.reissueToken(request, response))
                 .build();
         return ResponseEntity.ok().body(data);
     }
@@ -70,9 +70,9 @@ public class MemberController {
      * @return code (이메일 인증 코드)
      */
     @PostMapping("/member/sendAuthenticationCode")
-    public ResponseEntity<SuccessResponseDTO> sendAuthenticationCode(@RequestBody EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
+    public ResponseEntity<SuccessResponse> sendAuthenticationCode(@RequestBody EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
         String result = memberService.sendAuthenticationCode(dto);
-        SuccessResponseDTO data = SuccessResponseDTO.builder()
+        SuccessResponse data = SuccessResponse.builder()
                 .result(result)
                 .build();
         return ResponseEntity.ok().body(data);
@@ -84,9 +84,9 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/emailAuthentication")
-    public ResponseEntity<SuccessResponseDTO> emailAuthentication(@RequestBody EmailAuthenticationDTO dto) {
+    public ResponseEntity<SuccessResponse> emailAuthentication(@RequestBody EmailAuthenticationDTO dto) {
         String result = memberService.emailAuthentication(dto);
-        SuccessResponseDTO data = SuccessResponseDTO.builder()
+        SuccessResponse data = SuccessResponse.builder()
                 .result(result)
                 .build();
         return ResponseEntity.ok().body(data);
@@ -98,9 +98,18 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/passwordReset")
-    public ResponseEntity<SuccessResponseDTO> passwordReset(@RequestBody PasswordResetDTO dto) {
+    public ResponseEntity<SuccessResponse> passwordReset(@RequestBody PasswordResetDTO dto) {
         String result = memberService.passwordReset(dto);
-        SuccessResponseDTO data = SuccessResponseDTO.builder()
+        SuccessResponse data = SuccessResponse.builder()
+                .result(result)
+                .build();
+        return ResponseEntity.ok().body(data);
+    }
+
+    @PostMapping("/member/updateProfile")
+    public ResponseEntity<SuccessResponse> updateProfile(@RequestBody MemberDTO dto) {
+        String result = memberService.updateProfile(dto);
+        SuccessResponse data = SuccessResponse.builder()
                 .result(result)
                 .build();
         return ResponseEntity.ok().body(data);

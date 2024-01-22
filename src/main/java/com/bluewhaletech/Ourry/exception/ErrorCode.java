@@ -19,6 +19,7 @@ public enum ErrorCode {
     JWT_TOKEN_NOT_EXPIRED("M009", "JWT 토큰이 만료되지 않았습니다.", 200),
     JWT_TOKEN_NOT_FOUND("M010", "JWT 토큰이 존재하지 않습니다.", 200),
     JWT_TOKEN_MISMATCH("M011", "JWT 토큰 정보가 일치하지 않습니다", 200),
+    JWT_TOKEN_EXPIRED("M012", "JWT 토큰이 만료됐습니다", 200),
 
     // 400
     INVALID_INPUT_VALUE("E400", "잘못된 요청 양식입니다.", 400),

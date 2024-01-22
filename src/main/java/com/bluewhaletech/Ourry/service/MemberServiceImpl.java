@@ -8,9 +8,10 @@ import com.bluewhaletech.Ourry.exception.*;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
-import com.bluewhaletech.Ourry.repository.RedisRefreshTokenRepository;
+import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,9 +26,8 @@ import java.util.Random;
 
 @Service
 public class MemberServiceImpl implements MemberService {
-    private static final String AUTHORIZATION_KEY = "Authorization";
-    private static final String REFRESH_KEY = "Refresh";
-    private static final String TOKEN_TYPE = "Bearer";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String REFRESH_HEADER = "Refresh";
 
     private final JwtProvider tokenProvider;
     private final MailServiceImpl mailService;
@@ -35,11 +35,11 @@ public class MemberServiceImpl implements MemberService {
     private final MemberRepository memberRepository;
     private final JpaMemberRepository jpaMemberRepository;
     private final RedisEmailAuthentication redisEmailAuthentication;
-    private final RedisRefreshTokenRepository redisRefreshTokenRepository;
+    private final RedisJwtRepository redisRefreshTokenRepository;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Autowired
-    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisEmailAuthentication redisEmailAuthentication, RedisRefreshTokenRepository redisRefreshTokenRepository, AuthenticationManagerBuilder authenticationManagerBuilder) {
+    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisEmailAuthentication redisEmailAuthentication, RedisJwtRepository redisRefreshTokenRepository, AuthenticationManagerBuilder authenticationManagerBuilder) {
         this.tokenProvider = tokenProvider;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
@@ -107,14 +107,14 @@ public class MemberServiceImpl implements MemberService {
         redisRefreshTokenRepository.save(refreshToken);
 
         /* Response Header 안에 Access Token & Refresh Token 넣기 */
-        response.setHeader(AUTHORIZATION_KEY, TOKEN_TYPE+" "+token.getAccessToken());
-        response.setHeader(REFRESH_KEY, TOKEN_TYPE+" "+token.getRefreshToken());
+        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, token.getAccessToken());
+        tokenProvider.setResponseHeader(response, REFRESH_HEADER, token.getRefreshToken());
 
         return "SUCCESS";
     }
 
     @Transactional
-    public String reissueToken(TokenRequestDTO dto, HttpServletResponse response) {
+    public String reissueToken(HttpServletRequest request, HttpServletResponse response) {
         /* Refresh Token 형식 확인 */
 //        if(!tokenProvider.validateToken(dto.getRefreshToken())) {
 //            throw new RuntimeException("잘못된 JWT 토큰 형식입니다.");
@@ -126,16 +126,18 @@ public class MemberServiceImpl implements MemberService {
 //        }
 
         /* Access Token에서 인증(Authentication) 정보 가져오기 */
-        Authentication authentication = tokenProvider.getAuthentication(dto.getAccessToken());
+        String accessToken = request.getHeader("Authorization").substring(7);
+        Authentication authentication = tokenProvider.getAuthentication(accessToken);
 
         /* Redis 내부에 Refresh Token 존재하는지 확인 */
 //        RefreshToken refreshToken = redisRefreshTokenRepository.findByMemberId(dto.getMemberId())
 //                .orElseThrow(() -> new JwtTokenNotFoundException("Refresh Token이 존재하지 않습니다."));
-        RefreshToken refreshToken = redisRefreshTokenRepository.findByRefreshToken(dto.getRefreshToken())
+        String refreshToken = request.getHeader("Refresh").substring(7);
+        RefreshToken storedRefreshToken = redisRefreshTokenRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> new JwtTokenNotFoundException("Refresh Token이 존재하지 않습니다."));
 
         /* Redis에 저장된 Refresh Token 정보와 요청으로부터 받아온 Refresh Token 정보가 일치하는지 확인 */
-        if(!refreshToken.getTokenValue().equals(dto.getRefreshToken())) {
+        if(!storedRefreshToken.getTokenValue().equals(refreshToken)) {
             throw new JwtTokenMismatchException("Refresh Token 정보가 일치하지 않습니다.");
         }
 
@@ -155,14 +157,20 @@ public class MemberServiceImpl implements MemberService {
         redisRefreshTokenRepository.save(newRefreshToken);
 
         /* Response Header 안에 Access Token & Refresh Token 넣기 */
-        response.setHeader(AUTHORIZATION_KEY, TOKEN_TYPE+" "+token.getAccessToken());
-        response.setHeader(REFRESH_KEY, TOKEN_TYPE+" "+token.getRefreshToken());
+        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, token.getAccessToken());
+        tokenProvider.setResponseHeader(response, REFRESH_HEADER, token.getRefreshToken());
 
         return "SUCCESS";
     }
 
     @Transactional
     public String sendAuthenticationCode(EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
+        /* 이메일 중복 확인 */
+        jpaMemberRepository.findByEmail(dto.getEmail())
+                .ifPresent(member -> {
+                    throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
+                });
+
         /* 인증코드 생성 및 유효기간 5분으로 설정 */
         String code = createRandomCode();
         /* Redis 내부에 생성한 인증코드 저장 */
@@ -224,6 +232,13 @@ public class MemberServiceImpl implements MemberService {
         /* 회원 비밀번호 변경 */
         member.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         memberRepository.save(member);
+        return "SUCCESS";
+    }
+
+    @Transactional
+    public String updateProfile(MemberDTO dto) {
+        Member member = jpaMemberRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));
         return "SUCCESS";
     }
 

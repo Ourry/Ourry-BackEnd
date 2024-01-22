@@ -5,6 +5,6 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class SuccessResponseDTO {
+public class SuccessResponse {
     private String result;
 }

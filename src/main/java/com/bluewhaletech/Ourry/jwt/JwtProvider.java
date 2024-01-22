@@ -33,7 +33,8 @@ public class JwtProvider {
     private final Long accessTokenExpiration;
     private final Long refreshTokenExpiration;
 
-    private static final String AUTHORIZATION_KEY = "Authorization";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String REFRESH_HEADER = "Refresh";
     private static final String TOKEN_TYPE = "Bearer";
 
     @Autowired
@@ -55,7 +56,7 @@ public class JwtProvider {
         /* Access Token 생성 */
         String accessToken = Jwts.builder()
                 .subject(authentication.getName())
-                .claim(AUTHORIZATION_KEY, authorities)
+                .claim(AUTHORIZATION_HEADER, authorities)
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + accessTokenExpiration))
                 .signWith(secretKey, Jwts.SIG.HS256)
@@ -87,13 +88,13 @@ public class JwtProvider {
     /* 토큰 복호화를 통한 인증(Authentication) 정보 가져오기 */
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token).getPayload();
-        if(claims.get(AUTHORIZATION_KEY) == null) {
+        if(claims.get(AUTHORIZATION_HEADER) == null) {
             throw new AuthorizationNotFoundException("권한 정보가 존재하지 않는 토큰입니다");
         }
 
         /* 권한(Authority) 정보 가져오기 */
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORIZATION_KEY).toString().split(","))
+                Arrays.stream(claims.get(AUTHORIZATION_HEADER).toString().split(","))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
@@ -102,8 +103,8 @@ public class JwtProvider {
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
-    /* 토큰 유효성 체크 */
-    public boolean validateToken(String token) {
+    /* Access Token 유효성 체크 */
+    public boolean validateAccessToken(String token) {
         try {
             Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
             return true;
@@ -117,5 +118,10 @@ public class JwtProvider {
             log.info("올바르지 않는 JWT 토큰 형식입니다.");
         }
         return false;
+    }
+
+    /* Token 전송을 위한 Response Header 설정 */
+    public void setResponseHeader(HttpServletResponse response, String header, String token) {
+        response.setHeader(header, TOKEN_TYPE+" "+token);
     }
 }
