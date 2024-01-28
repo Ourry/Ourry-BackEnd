@@ -6,11 +6,9 @@ import org.springframework.data.repository.Repository;
 import java.util.Optional;
 
 public interface RedisJwtRepository extends Repository<RefreshToken, Long> {
-//    Optional<RefreshToken> findByMemberId(Long memberId);
+    Optional<RefreshToken> findById(Long tokenId);
 
-    Optional<RefreshToken> findByRefreshToken(String refreshToken);
-
-    boolean existsByRefreshToken(String refreshToken);
+    boolean existsByTokenId(Long tokenId);
 
     void save(RefreshToken refreshToken);
 }

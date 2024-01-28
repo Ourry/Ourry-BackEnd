@@ -1,16 +1,22 @@
 package com.bluewhaletech.Ourry.jwt;
 
+import com.bluewhaletech.Ourry.domain.Member;
+import com.bluewhaletech.Ourry.domain.RefreshToken;
+import com.bluewhaletech.Ourry.dto.AuthenticationDTO;
 import com.bluewhaletech.Ourry.dto.JwtDTO;
 import com.bluewhaletech.Ourry.exception.JwtTokenExpiredException;
 import com.bluewhaletech.Ourry.exception.JwtTokenNotFoundException;
+import com.bluewhaletech.Ourry.exception.MemberNotFoundException;
+import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -27,12 +33,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String TOKEN_TYPE = "Bearer";
 
     private final JwtProvider tokenProvider;
+    private final MemberRepository memberRepository;
     private final RedisJwtRepository redisJwtRepository;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Autowired
-    public JwtAuthenticationFilter(JwtProvider tokenProvider, RedisJwtRepository redisJwtRepository) {
+    public JwtAuthenticationFilter(JwtProvider tokenProvider, MemberRepository memberRepository, RedisJwtRepository redisJwtRepository, AuthenticationManagerBuilder authenticationManagerBuilder) {
         this.tokenProvider = tokenProvider;
+        this.memberRepository = memberRepository;
         this.redisJwtRepository = redisJwtRepository;
+        this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
     @Override
@@ -41,9 +51,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String accessToken = resolveToken(request, AUTHORIZATION_HEADER);
         if(accessToken != null) {
             String refreshToken = resolveToken(request, REFRESH_HEADER);
+            /* 로그인 이후에 인증이 필요한 요청을 보내는 경우 */
             if(refreshToken == null) {
-                /* Access Token 인증이 성공한 경우, 인증(Authentication) 정보를 가져와서 SecurityContext 내부에 저장  */
+                /* Access Token 인증이 성공한 경우 */
                 if(StringUtils.hasText(accessToken) && tokenProvider.validateAccessToken(accessToken)) {
+                    /* 인증(Authentication) 정보를 가져와서 SecurityContext 내부에 저장 */
                     Authentication authentication = tokenProvider.getAuthentication(accessToken);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
@@ -51,15 +63,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 else {
                     throw new JwtTokenExpiredException("Access Token이 만료됐습니다. 토큰을 재발급해주세요.");
                 }
-            } else {
-                /* Refresh Token 유요한 경우, Access Token 재발급 및 인증(Authentication) 정보를 생성해서 SecurityContext 내부에 저장 */
-                if(compareRefreshToken(refreshToken)) {
-                    Authentication authentication = tokenProvider.getAuthentication(accessToken);
-                    JwtDTO token = tokenProvider.createToken(authentication);
-                    tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, TOKEN_TYPE + " " + token.getAccessToken());
+            }
+            /* Access Token 재발급이 필요한 경우에만 수행 */
+            else {
+                /* Refresh Token 유효한 경우 */
+                if(validateRefreshToken(refreshToken)) {
+                    /* Refresh Token으로부터 사용자(Member) 정보 가져오기 */
+                    Member member = memberRepository.findOne(tokenProvider.getTokenId(refreshToken))
+                            .orElseThrow(() -> new MemberNotFoundException("Refresh Token으로 사용자를 조회할 수 없습니다."));
+                    /* 인증(Authentication) 정보를 생성해서 SecurityContext 내부에 저장 */
+                    Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+                            new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+                    );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-                /* Refresh Token 만료된 경우, JWT 만료 오류를 발생시켜서 로그인 유도 */
+                /* Refresh Token 인증이 실패했거나 만료된 경우, ExpiredJwtException 예외를 발생시켜서 로그인 유도 */
                 else {
                     throw new JwtTokenExpiredException("Refresh Token이 만료됐습니다. 다시 로그인해주세요.");
                 }
@@ -77,7 +95,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private boolean compareRefreshToken(String token) {
-        return redisJwtRepository.existsByRefreshToken(token);
+    private boolean validateRefreshToken(String refreshToken) {
+        Long tokenId = tokenProvider.getTokenId(refreshToken);
+        RefreshToken storedRefreshToken = redisJwtRepository.findById(tokenId)
+                .orElseThrow(() -> new JwtTokenNotFoundException("Refresh Token이 존재하지 않습니다."));
+        return refreshToken.equals(storedRefreshToken.getTokenValue());
     }
 }

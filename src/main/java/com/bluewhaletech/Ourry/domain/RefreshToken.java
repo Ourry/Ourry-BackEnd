@@ -10,17 +10,20 @@ import org.springframework.data.redis.core.index.Indexed;
 
 @Getter
 @RedisHash(value = "refreshToken")
-@NoArgsConstructor
 public class RefreshToken {
-    @Builder
-    public RefreshToken(String tokenValue, Long expiration) {
-        this.tokenValue = tokenValue;
-        this.expiration = expiration;
-    }
+    @Id
+    private Long tokenId;
 
-    @Id @Indexed
+    @Indexed
     private String tokenValue;
 
     @TimeToLive
     private Long expiration;
+
+    @Builder
+    public RefreshToken(Long tokenId, String tokenValue, Long expiration) {
+        this.tokenId = tokenId;
+        this.tokenValue = tokenValue;
+        this.expiration = expiration;
+    }
 }

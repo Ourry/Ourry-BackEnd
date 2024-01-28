@@ -53,7 +53,7 @@ public class MemberController {
 
     /**
      * JWT Token 재발급 API
-     * @param dto
+     * @param request, response
      * @return
      */
     @PostMapping("/member/reissueToken")

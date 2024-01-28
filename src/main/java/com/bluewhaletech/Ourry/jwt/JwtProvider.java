@@ -1,5 +1,6 @@
 package com.bluewhaletech.Ourry.jwt;
 
+import com.bluewhaletech.Ourry.dto.AuthenticationDTO;
 import com.bluewhaletech.Ourry.dto.JwtDTO;
 import com.bluewhaletech.Ourry.exception.AuthorizationNotFoundException;
 import com.bluewhaletech.Ourry.security.CustomUser;
@@ -34,7 +35,6 @@ public class JwtProvider {
     private final Long refreshTokenExpiration;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String REFRESH_HEADER = "Refresh";
     private static final String TOKEN_TYPE = "Bearer";
 
     @Autowired
@@ -45,17 +45,18 @@ public class JwtProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public JwtDTO createToken(Authentication authentication) {
+    public JwtDTO createToken(AuthenticationDTO dto) {
         /* 오늘 날짜를 시간으로 변경해서 가져옴 */
         long now = new Date(System.currentTimeMillis()).getTime();
+
         /* 인증(Authentication) 정보로부터 권한 목록 불러오기 */
-        String authorities = authentication.getAuthorities().stream()
+        String authorities = dto.getAuthentication().getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
         /* Access Token 생성 */
         String accessToken = Jwts.builder()
-                .subject(authentication.getName())
+                .subject(dto.getTokenName())
                 .claim(AUTHORIZATION_HEADER, authorities)
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + accessTokenExpiration))
@@ -64,6 +65,7 @@ public class JwtProvider {
 
         /* Refresh Token 생성 */
         String refreshToken = Jwts.builder()
+                .subject(String.valueOf(dto.getTokenId()))
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + refreshTokenExpiration))
                 .signWith(secretKey, Jwts.SIG.HS256)
@@ -85,7 +87,11 @@ public class JwtProvider {
                 .parseSignedClaims(token);
     }
 
-    /* 토큰 복호화를 통한 인증(Authentication) 정보 가져오기 */
+    public Long getTokenId(String refreshToken) {
+        return Long.parseLong(getClaims(refreshToken).getPayload().getSubject());
+    }
+
+    /* Access Token 복호화를 통한 인증(Authentication) 정보 가져오기 */
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token).getPayload();
         if(claims.get(AUTHORIZATION_HEADER) == null) {
@@ -111,7 +117,7 @@ public class JwtProvider {
         } catch (SecurityException | MalformedJwtException e) {
             log.info("잘못된 JWT 서명입니다.");
         } catch (ExpiredJwtException e) {
-            log.info("만료된 JWT 토큰입니다.");
+            log.info("JWT 토큰이 만료됐습니다. 토큰을 재발급해주세요.");
         } catch (BadCredentialsException | UnsupportedJwtException e) {
             log.info("유효하지 않거나 지원되지 않는 JWT 토큰입니다.");
         } catch (IllegalArgumentException e) {
