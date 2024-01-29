@@ -7,13 +7,11 @@ import com.bluewhaletech.Ourry.security.CustomUser;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SecurityException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -111,19 +109,9 @@ public class JwtProvider {
 
     /* Access Token 유효성 체크 */
     public boolean validateAccessToken(String token) {
-        try {
-            Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
-            return true;
-        } catch (SecurityException | MalformedJwtException e) {
-            log.info("잘못된 JWT 서명입니다.");
-        } catch (ExpiredJwtException e) {
-            log.info("JWT 토큰이 만료됐습니다. 토큰을 재발급해주세요.");
-        } catch (BadCredentialsException | UnsupportedJwtException e) {
-            log.info("유효하지 않거나 지원되지 않는 JWT 토큰입니다.");
-        } catch (IllegalArgumentException e) {
-            log.info("올바르지 않는 JWT 토큰 형식입니다.");
-        }
-        return false;
+        Claims claims = getClaims(token).getPayload();
+        Date expiredDate = claims.getExpiration();
+        return expiredDate.after(new Date());
     }
 
     /* Token 전송을 위한 Response Header 설정 */

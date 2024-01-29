@@ -2,9 +2,6 @@ package com.bluewhaletech.Ourry.jwt;
 
 import com.bluewhaletech.Ourry.domain.Member;
 import com.bluewhaletech.Ourry.domain.RefreshToken;
-import com.bluewhaletech.Ourry.dto.AuthenticationDTO;
-import com.bluewhaletech.Ourry.dto.JwtDTO;
-import com.bluewhaletech.Ourry.exception.JwtTokenExpiredException;
 import com.bluewhaletech.Ourry.exception.JwtTokenNotFoundException;
 import com.bluewhaletech.Ourry.exception.MemberNotFoundException;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
@@ -59,10 +56,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     Authentication authentication = tokenProvider.getAuthentication(accessToken);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-                /* Access Token 인증이 실패했거나 만료된 경우, 401 Unauthorized 오류를 발생시켜서 Access Token 재발급 유도 */
-                else {
-                    throw new JwtTokenExpiredException("Access Token이 만료됐습니다. 토큰을 재발급해주세요.");
-                }
             }
             /* Access Token 재발급이 필요한 경우에만 수행 */
             else {
@@ -77,13 +70,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
-                /* Refresh Token 인증이 실패했거나 만료된 경우, ExpiredJwtException 예외를 발생시켜서 로그인 유도 */
-                else {
-                    throw new JwtTokenExpiredException("Refresh Token이 만료됐습니다. 다시 로그인해주세요.");
-                }
             }
         }
-        /* Access Token 만료 & Refresh Token 만료 */
         filterChain.doFilter(request, response);
     }
 

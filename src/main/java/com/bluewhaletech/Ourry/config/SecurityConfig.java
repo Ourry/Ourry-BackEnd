@@ -3,6 +3,7 @@ package com.bluewhaletech.Ourry.config;
 import com.bluewhaletech.Ourry.jwt.JwtAccessDeniedHandler;
 import com.bluewhaletech.Ourry.jwt.JwtAuthenticationEntryPoint;
 import com.bluewhaletech.Ourry.jwt.JwtAuthenticationFilter;
+import com.bluewhaletech.Ourry.jwt.JwtExceptionFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,12 +21,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private final JwtExceptionFilter exceptionFilter;
     private final JwtAccessDeniedHandler accessDeniedHandler;
     private final JwtAuthenticationFilter authenticationFilter;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 
     @Autowired
-    public SecurityConfig(JwtAccessDeniedHandler accessDeniedHandler, JwtAuthenticationFilter authenticationFilter, JwtAuthenticationEntryPoint authenticationEntryPoint) {
+    public SecurityConfig(JwtExceptionFilter exceptionFilter, JwtAccessDeniedHandler accessDeniedHandler, JwtAuthenticationFilter authenticationFilter, JwtAuthenticationEntryPoint authenticationEntryPoint) {
+        this.exceptionFilter = exceptionFilter;
         this.accessDeniedHandler = accessDeniedHandler;
         this.authenticationFilter = authenticationFilter;
         this.authenticationEntryPoint = authenticationEntryPoint;
@@ -65,16 +68,18 @@ public class SecurityConfig {
 
         /* UsernamePasswordAuthenticationFilter 앞에 JwtAuthenticationFilter 추가 */
         http.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        /* JwtAuthenticationFilter 앞에 JwtExceptionFilter 추가 */
+        http.addFilterBefore(exceptionFilter, JwtAuthenticationFilter.class);
 
-        /* 로그인 API & 회원가입 API를 제외한 다른 요청에 대해 인증 설정 */
+        /* 인증을 요구하지 않는 API 목록 정의 */
         http.authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> authorizationManagerRequestMatcherRegistry
                 .requestMatchers("/member/createAccount").permitAll() // 회원가입 API
                 .requestMatchers("/member/memberLogin").permitAll() // 로그인 API
-                .requestMatchers("/member/sendAuthenticationCode").permitAll()
-                .requestMatchers("/member/emailAuthentication").permitAll()
-                .requestMatchers("/member/passwordReset").permitAll()
-                .requestMatchers("/member/reissueToken").permitAll()
-                .anyRequest().authenticated() // 위 URL을 제외한 나머지 요청에 대해 인증 설정
+                .requestMatchers("/member/sendAuthenticationCode").permitAll() // 이메일 인증코드 발송 API
+                .requestMatchers("/member/emailAuthentication").permitAll() // 이메일 인증 API
+                .requestMatchers("/member/passwordReset").permitAll() // 비밀번호 재설정 API
+                .requestMatchers("/member/reissueToken").permitAll() // JWT 토큰 재발급 API
+                .anyRequest().authenticated() // 위 URL 목록을 제외한 나머지 요청에 대해 인증 수행
         );
         return http.build();
     }

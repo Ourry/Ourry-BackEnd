@@ -111,7 +111,7 @@ public class MemberServiceImpl implements MemberService {
 
         /* Refresh Token으로부터 사용자(Member) 정보 가져오기 */
         Member member = memberRepository.findOne(tokenProvider.getTokenId(refreshToken))
-                .orElseThrow(() -> new MemberNotFoundException("Refresh Token으로 사용자를 조회할 수 없습니다."));
+                .orElseThrow(() -> new MemberNotFoundException("Refresh Token으로 조회되는 사용자가 없습니다."));
 
         /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 */
         JwtDTO newJwt = memberAuthentication(member);

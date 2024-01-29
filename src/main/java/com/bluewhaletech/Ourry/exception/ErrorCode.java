@@ -14,19 +14,15 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND("M004", "존재하지 않는 회원입니다.", 200),
     AUTHENTICATION_NOT_COMPLETED("M005", "이메일 인증이 완료되지 않았습니다.", 200),
     AUTHENTICATION_CODE_MISMATCH("M006", "인증코드가 일치하지 않습니다.", 200),
-    AUTHENTICATION_CODE_EXPIRATION("M007", "인증코드의 유효시간이 만료됐습니다.", 200),
-    AUTHORIZATION_NOT_FOUND("M008", "권한 정보가 존재하지 않습니다.", 200),
-    JWT_TOKEN_NOT_FOUND("M009", "JWT 토큰이 존재하지 않습니다.", 200),
-    JWT_TOKEN_MISMATCH("M010", "JWT 토큰 정보가 일치하지 않습니다", 200),
-    JWT_TOKEN_EXPIRED("M011", "JWT 토큰이 만료됐습니다", 200),
+    AUTHORIZATION_NOT_FOUND("M007", "권한 정보가 존재하지 않습니다.", 200),
 
     // 400
-    INVALID_INPUT_VALUE("E400", "잘못된 요청 양식입니다.", 400),
+    BAD_REQUEST("E400", "잘못된 요청입니다.", 400),
     // 404
-    NOT_FOUND("E404", "해당 페이지를 찾을 수 없습니다.", 400),
+    PAGE_NOT_FOUND("E404", "해당 페이지를 찾을 수 없습니다.", 404),
 
     // 500
-    INTERNAL_SERVER_ERROR("E500", "서버에 오류가 발생했습니다.", 500);
+    INTERNAL_SERVER_ERROR("E500", "서버에 정의되지 않은 오류가 발생했습니다.", 500);
 
     private final String code;
     private final String message;
