@@ -1,6 +1,7 @@
 package com.bluewhaletech.Ourry.controller;
 
 import com.bluewhaletech.Ourry.dto.*;
+import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,10 +18,15 @@ import java.io.UnsupportedEncodingException;
 @Slf4j
 @Controller
 public class MemberController {
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String REFRESH_HEADER = "Refresh";
+
+    private final JwtProvider tokenProvider;
     private final MemberServiceImpl memberService;
 
     @Autowired
-    public MemberController(MemberServiceImpl memberService) {
+    public MemberController(JwtProvider tokenProvider, MemberServiceImpl memberService) {
+        this.tokenProvider = tokenProvider;
         this.memberService = memberService;
     }
 
@@ -39,15 +45,19 @@ public class MemberController {
     }
 
     /**
-     * 로그인 API
+     * 회원 로그인 API
      * @param dto
      * @return jwt (JWT)
      */
     @PostMapping("/member/memberLogin")
     public ResponseEntity<SuccessResponse> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
+        JwtDTO newJwt = memberService.memberLogin(dto);
         SuccessResponse data = SuccessResponse.builder()
-                .result(memberService.memberLogin(dto, response))
+                .result("SUCCESS")
                 .build();
+        /* Response Header 안에 Access Token & Refresh Token 생성 */
+        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
+        tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
         return ResponseEntity.ok().body(data);
     }
 
@@ -58,8 +68,29 @@ public class MemberController {
      */
     @PostMapping("/member/reissueToken")
     public ResponseEntity<SuccessResponse> reissueToken(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = tokenProvider.resolveToken(request, REFRESH_HEADER);
+        JwtDTO newJwt = memberService.reissueToken(refreshToken);
         SuccessResponse data = SuccessResponse.builder()
-                .result(memberService.reissueToken(request, response))
+                .result("SUCCESS")
+                .build();
+        /* Response Header 안에 새로운 Access Token & Refresh Token 갱신 */
+        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
+        tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
+        return ResponseEntity.ok().body(data);
+    }
+
+    /**
+     * 회원 로그아웃 API
+     * @param request
+     * @return
+     */
+    @PostMapping("/member/memberLogout")
+    public ResponseEntity<SuccessResponse> memberLogout(HttpServletRequest request) {
+        String accessToken = tokenProvider.resolveToken(request, AUTHORIZATION_HEADER);
+        String refreshToken = tokenProvider.resolveToken(request, REFRESH_HEADER);
+        String result = memberService.memberLogout(accessToken, refreshToken);
+        SuccessResponse data = SuccessResponse.builder()
+                .result(result)
                 .build();
         return ResponseEntity.ok().body(data);
     }

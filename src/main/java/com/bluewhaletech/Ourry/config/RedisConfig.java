@@ -24,15 +24,16 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, String> redisEmailAuthenticationTemplate() {
-        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, Object> redisJwtManagementTemplate() {
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new StringRedisSerializer());
         return redisTemplate;
     }
 
     @Bean
-    public RedisTemplate<String, Map<String, String>> redisTokenManagementTemplate() {
+    public RedisTemplate<String, Map<String, String>> redisEmailAuthenticationTemplate() {
         RedisTemplate<String, Map<String, String>> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());

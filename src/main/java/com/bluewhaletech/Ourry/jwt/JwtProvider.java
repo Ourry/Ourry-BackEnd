@@ -7,6 +7,7 @@ import com.bluewhaletech.Ourry.security.CustomUser;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +18,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -89,6 +92,11 @@ public class JwtProvider {
         return Long.parseLong(getClaims(refreshToken).getPayload().getSubject());
     }
 
+    public Long getTokenExpiration(String token) {
+        long now = new Date().getTime();
+        return getClaims(token).getPayload().getExpiration().getTime()-now;
+    }
+
     /* Access Token 복호화를 통한 인증(Authentication) 정보 가져오기 */
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token).getPayload();
@@ -109,9 +117,18 @@ public class JwtProvider {
 
     /* Access Token 유효성 체크 */
     public boolean validateAccessToken(String token) {
-        Claims claims = getClaims(token).getPayload();
-        Date expiredDate = claims.getExpiration();
+        Date expiredDate = Optional.of(getClaims(token).getPayload().getExpiration())
+                .orElseThrow(() -> new JwtException("토큰이 만료됐거나 유효하지 않습니다."));
         return expiredDate.after(new Date());
+    }
+
+    /* JWT 토큰 값 추출 */
+    public String resolveToken(HttpServletRequest request, String header) {
+        String bearerToken = request.getHeader(header);
+        if(StringUtils.hasText(bearerToken) && bearerToken.startsWith(TOKEN_TYPE)) {
+            return bearerToken.substring(7);
+        }
+        return null;
     }
 
     /* Token 전송을 위한 Response Header 설정 */

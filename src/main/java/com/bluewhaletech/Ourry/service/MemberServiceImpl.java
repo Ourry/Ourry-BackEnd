@@ -9,10 +9,10 @@ import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
+import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
+import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,9 +28,6 @@ import java.util.Random;
 @Slf4j
 @Service
 public class MemberServiceImpl implements MemberService {
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String REFRESH_HEADER = "Refresh";
-
     private final JwtProvider tokenProvider;
     private final MailServiceImpl mailService;
     private final PasswordEncoder passwordEncoder;
@@ -38,17 +35,19 @@ public class MemberServiceImpl implements MemberService {
     private final JpaMemberRepository jpaMemberRepository;
     private final RedisJwtRepository redisJwtRepository;
     private final RedisEmailAuthentication redisEmailAuthentication;
+    private final RedisBlackListManagement redisBlackListManagement;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Autowired
-    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisEmailAuthentication redisEmailAuthentication, RedisJwtRepository redisJwtRepository, AuthenticationManagerBuilder authenticationManagerBuilder) {
+    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisJwtRepository redisJwtRepository, RedisEmailAuthentication redisEmailAuthentication, RedisBlackListManagement redisBlackListManagement, AuthenticationManagerBuilder authenticationManagerBuilder) {
         this.tokenProvider = tokenProvider;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
         this.memberRepository = memberRepository;
         this.jpaMemberRepository = jpaMemberRepository;
-        this.redisEmailAuthentication = redisEmailAuthentication;
         this.redisJwtRepository = redisJwtRepository;
+        this.redisEmailAuthentication = redisEmailAuthentication;
+        this.redisBlackListManagement = redisBlackListManagement;
         this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
@@ -78,7 +77,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public String memberLogin(MemberLoginDTO dto, HttpServletResponse response) {
+    public JwtDTO memberLogin(MemberLoginDTO dto) {
         /* 이메일 유효성 확인 */
         Member member = jpaMemberRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new EmailIncorrectException("이메일 주소가 올바르지 않습니다."));
@@ -88,21 +87,15 @@ public class MemberServiceImpl implements MemberService {
             throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
         }
 
-        /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 */
-        JwtDTO newJwt = memberAuthentication(member);
-
-        /* Response Header 안에 Access Token & Refresh Token 넣기 */
-        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
-        tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
-        return "SUCCESS";
+        /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 및 JWT 발급 */
+        return memberAuthentication(member);
     }
 
     @Transactional
-    public String reissueToken(HttpServletRequest request, HttpServletResponse response) {
+    public JwtDTO reissueToken(String refreshToken) {
         /* Redis 내부에 Refresh Token 존재하는지 확인 */
-        String refreshToken = request.getHeader("Refresh").substring(7);
         RefreshToken storedRefreshToken = redisJwtRepository.findById(tokenProvider.getTokenId(refreshToken))
-                .orElseThrow(() -> new JwtTokenNotFoundException("Refresh Token이 존재하지 않습니다."));
+                .orElseThrow(() -> new JwtException("존재하지 않는 Refresh Token입니다."));
 
         /* Redis에 저장된 Refresh Token 정보와 요청으로부터 받아온 Refresh Token 정보가 일치하는지 확인 */
         if(!refreshToken.equals(storedRefreshToken.getTokenValue())) {
@@ -113,13 +106,18 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findOne(tokenProvider.getTokenId(refreshToken))
                 .orElseThrow(() -> new MemberNotFoundException("Refresh Token으로 조회되는 사용자가 없습니다."));
 
-        /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 */
-        JwtDTO newJwt = memberAuthentication(member);
+        /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 및 JWT 발급 */
+        return memberAuthentication(member);
+    }
 
-        /* Response Header 안에 새로운 Access Token & Refresh Token 갱신 */
-        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
-        tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
-
+    @Transactional
+    public String memberLogout(String accessToken, String refreshToken) {
+        /* 토큰 ID 가져오기 (JwtAuthenticationFilter 내부에서 유효성 검사 진행) */
+        Long memberId = tokenProvider.getTokenId(refreshToken);
+        /* Redis 내부에 저장된 Refresh Token 값 삭제 */
+        redisJwtRepository.deleteById(memberId);
+        /* Redis 내부에 해당 Access Token 값을 BlackList로 저장 */
+        redisBlackListManagement.setAccessTokenExpire(accessToken, tokenProvider.getTokenExpiration(accessToken));
         return "SUCCESS";
     }
 
