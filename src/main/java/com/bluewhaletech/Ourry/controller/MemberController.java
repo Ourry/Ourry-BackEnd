@@ -87,8 +87,7 @@ public class MemberController {
     @PostMapping("/member/memberLogout")
     public ResponseEntity<SuccessResponse> memberLogout(HttpServletRequest request) {
         String accessToken = tokenProvider.resolveToken(request, AUTHORIZATION_HEADER);
-        String refreshToken = tokenProvider.resolveToken(request, REFRESH_HEADER);
-        String result = memberService.memberLogout(accessToken, refreshToken);
+        String result = memberService.memberLogout(accessToken);
         SuccessResponse data = SuccessResponse.builder()
                 .result(result)
                 .build();

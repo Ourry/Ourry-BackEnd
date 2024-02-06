@@ -12,5 +12,5 @@ public interface MemberService {
 
     JwtDTO reissueToken(String refreshToken) throws Exception;
 
-    String memberLogout(String accessToken, String refreshToken) throws Exception;
+    String memberLogout(String accessToken) throws Exception;
 }

@@ -198,8 +198,7 @@ class OurryApplicationTests {
 
 		//when
 		String accessToken = jwt.getAccessToken();
-		String refreshToken = jwt.getRefreshToken();
-		memberService.memberLogout(accessToken, refreshToken);
+		memberService.memberLogout(accessToken);
 
 		//then
 		Assertions.assertThat("LOGOUT").isEqualTo(redisBlackListManagement.checkLogout(accessToken));

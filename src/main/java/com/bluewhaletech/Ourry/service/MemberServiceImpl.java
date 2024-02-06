@@ -61,7 +61,7 @@ public class MemberServiceImpl implements MemberService {
 
         /* 이메일 인증여부 확안 */
         if(redisEmailAuthentication.getAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(dto.getEmail()).equals("Y")) {
-            throw new AuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
+            throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
         }
 
         /* 회원가입 */
@@ -94,7 +94,8 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public JwtDTO reissueToken(String refreshToken) {
         /* Redis 내부에 Refresh Token 존재하는지 확인 */
-        RefreshToken storedRefreshToken = redisJwtRepository.findById(tokenProvider.getTokenId(refreshToken))
+        Long tokenId = tokenProvider.getTokenId(refreshToken);
+        RefreshToken storedRefreshToken = redisJwtRepository.findById(tokenId)
                 .orElseThrow(() -> new JwtException("존재하지 않는 Refresh Token입니다."));
 
         /* Redis에 저장된 Refresh Token 정보와 요청으로부터 받아온 Refresh Token 정보가 일치하는지 확인 */
@@ -111,11 +112,14 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public String memberLogout(String accessToken, String refreshToken) {
-        /* 토큰 ID 가져오기 (JwtAuthenticationFilter 내부에서 유효성 검사 진행) */
-        Long memberId = tokenProvider.getTokenId(refreshToken);
+    public String memberLogout(String accessToken) {
+        /* Access Token으로부터 Subject(Email) 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken);
+        /* Email로부터 Member ID 가져오기 */
+        Member member = jpaMemberRepository.findByEmail(email)
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         /* Redis 내부에 저장된 Refresh Token 값 삭제 */
-        redisJwtRepository.deleteById(memberId);
+        redisJwtRepository.deleteById(member.getMemberId());
         /* Redis 내부에 해당 Access Token 값을 BlackList로 저장 */
         redisBlackListManagement.setAccessTokenExpire(accessToken, tokenProvider.getTokenExpiration(accessToken));
         return "SUCCESS";
@@ -164,7 +168,7 @@ public class MemberServiceImpl implements MemberService {
 
         /* 입력한 인증코드와 발송된 인증코드 값 비교 */
         if(!code.equals(dto.getCode())) {
-            throw new AuthenticationCodeMismatchException("이메일 인증코드가 일치하지 않습니다.");
+            throw new EmailAuthenticationCodeMismatchException("이메일 인증코드가 일치하지 않습니다.");
         }
 
         /* 이메일 인증 완료 처리 */
@@ -179,7 +183,7 @@ public class MemberServiceImpl implements MemberService {
 
         /* 이메일 인증여부 확안 */
         if(redisEmailAuthentication.getAuthenticationCode(member.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(member.getEmail()).equals("Y")) {
-            throw new AuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
+            throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
         }
 
         /* '새 비밀번호'와 '새 비밀번호확인' 값 비교 */

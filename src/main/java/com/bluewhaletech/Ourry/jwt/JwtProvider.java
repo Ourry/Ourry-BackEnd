@@ -9,7 +9,6 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtProvider {
     private final SecretKey secretKey;
     private final Long accessTokenExpiration;
@@ -90,6 +88,10 @@ public class JwtProvider {
 
     public Long getTokenId(String refreshToken) {
         return Long.parseLong(getClaims(refreshToken).getPayload().getSubject());
+    }
+
+    public String getTokenSubject(String accessToken) {
+        return getClaims(accessToken).getPayload().getSubject();
     }
 
     public Long getTokenExpiration(String token) {

@@ -1,7 +1,9 @@
 package com.bluewhaletech.Ourry.exception;
 
-public class AuthorizationNotFoundException extends MemberException {
+import io.jsonwebtoken.JwtException;
+
+public class AuthorizationNotFoundException extends JwtException {
     public AuthorizationNotFoundException(String message) {
-        super(ErrorCode.AUTHORIZATION_NOT_FOUND);
+        super(message);
     }
 }

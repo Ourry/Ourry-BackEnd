@@ -13,7 +13,7 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ErrorResponse> handleBusinessException(final BusinessException e) {
         log.error("businessException", e);
         final ErrorCode errorCode = e.getErrorCode();
-        final ErrorResponse response = ErrorResponse.of(errorCode);
+        final ErrorResponse response = ErrorResponse.of(errorCode, e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.valueOf(errorCode.getStatus()));
     }
 
@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ErrorResponse> handleServerException(Exception e) {
         log.error("serverException", e);
         final ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-        final ErrorResponse response = ErrorResponse.of(errorCode);
+        final ErrorResponse response = ErrorResponse.of(errorCode, e.getMessage());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
