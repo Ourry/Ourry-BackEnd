@@ -4,6 +4,8 @@ import com.bluewhaletech.Ourry.domain.Member;
 import jakarta.persistence.*;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public class MemberRepository {
     @PersistenceContext
@@ -16,5 +18,9 @@ public class MemberRepository {
             em.merge(member);
         }
         return member.getMemberId();
+    }
+
+    public Optional<Member> findOne(Long memberId) {
+        return Optional.ofNullable(em.find(Member.class, memberId));
     }
 }
