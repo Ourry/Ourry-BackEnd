@@ -119,8 +119,7 @@ public class JwtProvider {
 
     /* Access Token 유효성 체크 */
     public boolean validateAccessToken(String token) {
-        Date expiredDate = Optional.of(getClaims(token).getPayload().getExpiration())
-                .orElseThrow(() -> new JwtException("토큰이 만료됐거나 유효하지 않습니다."));
+        Date expiredDate = getClaims(token).getPayload().getExpiration();
         return expiredDate.after(new Date());
     }
 

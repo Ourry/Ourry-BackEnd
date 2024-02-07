@@ -6,11 +6,11 @@ import com.bluewhaletech.Ourry.dto.MemberRegistrationDTO;
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface MemberService {
-    String createAccount(MemberRegistrationDTO dto) throws Exception;
+    void createAccount(MemberRegistrationDTO dto) throws Exception;
 
     JwtDTO memberLogin(MemberLoginDTO dto) throws Exception;
 
     JwtDTO reissueToken(String refreshToken) throws Exception;
 
-    String memberLogout(String accessToken) throws Exception;
+    void memberLogout(String accessToken) throws Exception;
 }

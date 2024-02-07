@@ -36,12 +36,9 @@ public class MemberController {
      * @return memberId (회원 엔티티 PK)
      */
     @PostMapping("/member/createAccount")
-    public ResponseEntity<SuccessResponse> createAccount(@RequestBody MemberRegistrationDTO dto) {
-        String result = memberService.createAccount(dto); // 회원가입 성공 시 반환
-        SuccessResponse data = SuccessResponse.builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(data);
+    public ResponseEntity<Object> createAccount(@RequestBody MemberRegistrationDTO dto) {
+        memberService.createAccount(dto);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -50,15 +47,12 @@ public class MemberController {
      * @return jwt (JWT)
      */
     @PostMapping("/member/memberLogin")
-    public ResponseEntity<SuccessResponse> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
+    public ResponseEntity<Object> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
         JwtDTO newJwt = memberService.memberLogin(dto);
-        SuccessResponse data = SuccessResponse.builder()
-                .result("SUCCESS")
-                .build();
         /* Response Header 안에 Access Token & Refresh Token 생성 */
         tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
         tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
-        return ResponseEntity.ok().body(data);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -67,16 +61,13 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/reissueToken")
-    public ResponseEntity<SuccessResponse> reissueToken(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<Object> reissueToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = tokenProvider.resolveToken(request, REFRESH_HEADER);
         JwtDTO newJwt = memberService.reissueToken(refreshToken);
-        SuccessResponse data = SuccessResponse.builder()
-                .result("SUCCESS")
-                .build();
         /* Response Header 안에 새로운 Access Token & Refresh Token 갱신 */
         tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
         tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
-        return ResponseEntity.ok().body(data);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -85,13 +76,10 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/memberLogout")
-    public ResponseEntity<SuccessResponse> memberLogout(HttpServletRequest request) {
+    public ResponseEntity<Object> memberLogout(HttpServletRequest request) {
         String accessToken = tokenProvider.resolveToken(request, AUTHORIZATION_HEADER);
-        String result = memberService.memberLogout(accessToken);
-        SuccessResponse data = SuccessResponse.builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(data);
+        memberService.memberLogout(accessToken);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -100,12 +88,9 @@ public class MemberController {
      * @return code (이메일 인증 코드)
      */
     @PostMapping("/member/sendAuthenticationCode")
-    public ResponseEntity<SuccessResponse> sendAuthenticationCode(@RequestBody EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
-        String result = memberService.sendAuthenticationCode(dto);
-        SuccessResponse data = SuccessResponse.builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(data);
+    public ResponseEntity<Object> sendAuthenticationCode(@RequestBody EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
+        memberService.sendAuthenticationCode(dto);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -114,12 +99,9 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/emailAuthentication")
-    public ResponseEntity<SuccessResponse> emailAuthentication(@RequestBody EmailAuthenticationDTO dto) {
-        String result = memberService.emailAuthentication(dto);
-        SuccessResponse data = SuccessResponse.builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(data);
+    public ResponseEntity<Object> emailAuthentication(@RequestBody EmailAuthenticationDTO dto) {
+        memberService.emailAuthentication(dto);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -128,20 +110,14 @@ public class MemberController {
      * @return
      */
     @PostMapping("/member/passwordReset")
-    public ResponseEntity<SuccessResponse> passwordReset(@RequestBody PasswordResetDTO dto) {
-        String result = memberService.passwordReset(dto);
-        SuccessResponse data = SuccessResponse.builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(data);
+    public ResponseEntity<Object> passwordReset(@RequestBody PasswordResetDTO dto) {
+        memberService.passwordReset(dto);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/member/updateProfile")
-    public ResponseEntity<SuccessResponse> updateProfile(@RequestBody MemberDTO dto) {
-        String result = memberService.updateProfile(dto);
-        SuccessResponse data = SuccessResponse.builder()
-                .result(result)
-                .build();
-        return ResponseEntity.ok().body(data);
+    public ResponseEntity<Object> updateProfile(@RequestBody MemberDTO dto) {
+        memberService.updateProfile(dto);
+        return ResponseEntity.ok().build();
     }
 }

@@ -203,4 +203,46 @@ class OurryApplicationTests {
 		//then
 		Assertions.assertThat("LOGOUT").isEqualTo(redisBlackListManagement.checkLogout(accessToken));
 	}
+
+	@Test
+	@Transactional
+	@DisplayName("Refresh Token 재발급 테스트")
+	void reissueTest() {
+		//given
+		Member member = Member.builder()
+				.memberId(1L)
+				.email("abc@naver.com")
+				.password("1234")
+				.nickname("Para")
+				.phone("01044748813")
+				.role(MemberRole.USER)
+				.build();
+		memberRepository.save(member);
+
+		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+		);
+		AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
+				.tokenId(member.getMemberId())
+				.tokenName(member.getEmail())
+				.authentication(authentication)
+				.build();
+		JwtDTO jwt = tokenProvider.createToken(authenticationDTO);
+		redisJwtRepository.save(RefreshToken.builder()
+				.tokenId(member.getMemberId())
+				.tokenValue(jwt.getRefreshToken())
+				.expiration(jwt.getRefreshTokenExpiration())
+				.build());
+
+		//when
+		JwtDTO newJwt = memberService.reissueToken(jwt.getRefreshToken());
+
+		//then
+		Long atk = tokenProvider.getTokenExpiration(jwt.getAccessToken());
+		Long rtk = tokenProvider.getTokenExpiration(jwt.getRefreshToken());
+		Long atkExpiration = tokenProvider.getTokenExpiration(newJwt.getAccessToken());
+		Long rtkExpiration = tokenProvider.getTokenExpiration(newJwt.getRefreshToken());
+		System.out.println(atk + " " + atkExpiration);
+		System.out.println(rtk + " " + rtkExpiration);
+	}
 }

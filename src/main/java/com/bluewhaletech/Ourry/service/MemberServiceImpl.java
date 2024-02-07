@@ -52,7 +52,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public String createAccount(MemberRegistrationDTO dto) {
+    public void createAccount(MemberRegistrationDTO dto) {
         /* 이메일 중복 확인 */
         jpaMemberRepository.findByEmail(dto.getEmail())
                 .ifPresent(member -> {
@@ -73,7 +73,6 @@ public class MemberServiceImpl implements MemberService {
                 .role(MemberRole.USER)
                 .build();
         memberRepository.save(member);
-        return "SUCCESS";
     }
 
     @Transactional
@@ -112,7 +111,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public String memberLogout(String accessToken) {
+    public void memberLogout(String accessToken) {
         /* Access Token으로부터 Subject(Email) 가져오기 */
         String email = tokenProvider.getTokenSubject(accessToken);
         /* Email로부터 Member ID 가져오기 */
@@ -122,11 +121,10 @@ public class MemberServiceImpl implements MemberService {
         redisJwtRepository.deleteById(member.getMemberId());
         /* Redis 내부에 해당 Access Token 값을 BlackList로 저장 */
         redisBlackListManagement.setAccessTokenExpire(accessToken, tokenProvider.getTokenExpiration(accessToken));
-        return "SUCCESS";
     }
 
     @Transactional
-    public String sendAuthenticationCode(EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
+    public void sendAuthenticationCode(EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
         /* 이메일 중복 확인 */
         jpaMemberRepository.findByEmail(dto.getEmail())
                 .ifPresent(member -> {
@@ -153,11 +151,10 @@ public class MemberServiceImpl implements MemberService {
 
         /* 입력한 이메일로 인증코드 발송 */
         mailService.sendMail(data);
-        return "SUCCESS";
     }
 
     @Transactional
-    public String emailAuthentication(EmailAuthenticationDTO dto) {
+    public void emailAuthentication(EmailAuthenticationDTO dto) {
         /* 회원 이메일로 전송된 인증코드 */
         String code = redisEmailAuthentication.getAuthenticationCode(dto.getEmail());
 
@@ -173,11 +170,10 @@ public class MemberServiceImpl implements MemberService {
 
         /* 이메일 인증 완료 처리 */
         redisEmailAuthentication.setAuthenticationComplete(dto.getEmail());
-        return "SUCCESS";
     }
 
     @Transactional
-    public String passwordReset(PasswordResetDTO dto) {
+    public void passwordReset(PasswordResetDTO dto) {
         /* 이메일(회원) 존재 확인 */
         Member member = jpaMemberRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
 
@@ -194,14 +190,12 @@ public class MemberServiceImpl implements MemberService {
         /* 회원 비밀번호 변경 */
         member.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         memberRepository.save(member);
-        return "SUCCESS";
     }
 
     @Transactional
-    public String updateProfile(MemberDTO dto) {
+    public void updateProfile(MemberDTO dto) {
         Member member = jpaMemberRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));
-        return "SUCCESS";
     }
 
     private JwtDTO memberAuthentication(Member member) {
