@@ -1,14 +1,18 @@
 package com.bluewhaletech.Ourry.service;
 
 import com.bluewhaletech.Ourry.domain.Member;
-import com.bluewhaletech.Ourry.domain.Role;
+import com.bluewhaletech.Ourry.domain.MemberRole;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.exception.*;
+import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.util.RedisUtil;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,22 +23,26 @@ import java.util.Random;
 @Service
 public class MemberServiceImpl implements MemberService {
     private final RedisUtil redisUtil;
+    private final JwtProvider tokenProvider;
     private final MailServiceImpl mailService;
     private final PasswordEncoder passwordEncoder;
     private final MemberRepository memberRepository;
     private final JpaMemberRepository jpaMemberRepository;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Autowired
-    public MemberServiceImpl(RedisUtil redisUtil, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository) {
+    public MemberServiceImpl(RedisUtil redisUtil, JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, AuthenticationManagerBuilder authenticationManagerBuilder) {
         this.redisUtil = redisUtil;
+        this.tokenProvider = tokenProvider;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
         this.memberRepository = memberRepository;
         this.jpaMemberRepository = jpaMemberRepository;
+        this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
     @Transactional
-    public Long createAccount(MemberRegistrationDTO dto) {
+    public String createAccount(MemberRegistrationDTO dto) {
         /* 이메일 중복 확인 */
         jpaMemberRepository.findByEmail(dto.getEmail())
                 .ifPresent(member -> {
@@ -47,13 +55,14 @@ public class MemberServiceImpl implements MemberService {
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .nickname(dto.getNickname())
                 .phone(dto.getPhone())
-                .role(Role.MEMBER)
+                .role(MemberRole.USER)
                 .build();
-        return memberRepository.save(member);
+        memberRepository.save(member);
+        return "SUCCESS";
     }
 
     @Transactional
-    public String memberLogin(MemberLoginDTO dto) {
+    public JwtDTO memberLogin(MemberLoginDTO dto) {
         /* 이메일 유효성 확인 */
         Member member = jpaMemberRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new EmailIncorrectException("이메일 주소가 올바르지 않습니다."));
 
@@ -62,7 +71,15 @@ public class MemberServiceImpl implements MemberService {
             throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
         }
 
-        return "SUCCESS";
+        /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 */
+        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        member.getEmail(), member.getPassword()
+                )
+        );
+
+        /* JWT 발급 */
+        return tokenProvider.createToken(authentication);
     }
 
     @Transactional

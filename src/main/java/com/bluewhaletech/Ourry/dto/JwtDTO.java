@@ -6,5 +6,8 @@ import lombok.Getter;
 @Getter
 @Builder
 public class JwtDTO {
-    private String jwt;
+    private String type;
+    private String accessToken;
+    private String refreshToken;
+    private Long accessTokenExpiration;
 }
