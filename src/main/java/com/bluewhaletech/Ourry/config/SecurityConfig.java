@@ -3,7 +3,6 @@ package com.bluewhaletech.Ourry.config;
 import com.bluewhaletech.Ourry.jwt.JwtAccessDeniedHandler;
 import com.bluewhaletech.Ourry.jwt.JwtAuthenticationEntryPoint;
 import com.bluewhaletech.Ourry.jwt.JwtAuthenticationFilter;
-import com.bluewhaletech.Ourry.jwt.JwtExceptionFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,14 +20,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final JwtExceptionFilter exceptionFilter;
     private final JwtAccessDeniedHandler accessDeniedHandler;
     private final JwtAuthenticationFilter authenticationFilter;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 
     @Autowired
-    public SecurityConfig(JwtExceptionFilter exceptionFilter, JwtAccessDeniedHandler accessDeniedHandler, JwtAuthenticationFilter authenticationFilter, JwtAuthenticationEntryPoint authenticationEntryPoint) {
-        this.exceptionFilter = exceptionFilter;
+    public SecurityConfig(JwtAccessDeniedHandler accessDeniedHandler, JwtAuthenticationFilter authenticationFilter, JwtAuthenticationEntryPoint authenticationEntryPoint) {
         this.accessDeniedHandler = accessDeniedHandler;
         this.authenticationFilter = authenticationFilter;
         this.authenticationEntryPoint = authenticationEntryPoint;
@@ -68,8 +65,6 @@ public class SecurityConfig {
 
         /* UsernamePasswordAuthenticationFilter 앞에 JwtAuthenticationFilter 추가 */
         http.addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        /* JwtAuthenticationFilter 앞에 JwtExceptionFilter 추가 */
-        http.addFilterBefore(exceptionFilter, JwtAuthenticationFilter.class);
 
         /* 인증을 요구하지 않는 API 목록 정의 */
         http.authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> authorizationManagerRequestMatcherRegistry

@@ -11,7 +11,6 @@ import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
 import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
-import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,10 +58,10 @@ public class MemberServiceImpl implements MemberService {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
 
-        /* 이메일 인증여부 확안 */
+        /* 이메일 인증여부 확안
         if(redisEmailAuthentication.getAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(dto.getEmail()).equals("Y")) {
             throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
-        }
+        } */
 
         /* 회원가입 */
         Member member = Member.builder()
@@ -79,7 +78,7 @@ public class MemberServiceImpl implements MemberService {
     public JwtDTO memberLogin(MemberLoginDTO dto) {
         /* 이메일 유효성 확인 */
         Member member = jpaMemberRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new EmailIncorrectException("이메일 주소가 올바르지 않습니다."));
+                .orElseThrow(() -> new MemberNotFoundException("등록되지 않은 이메일입니다."));
 
         /* 비밀번호 일치 확인 */
         if(!passwordEncoder.matches(dto.getPassword(), member.getPassword())) {
@@ -95,16 +94,16 @@ public class MemberServiceImpl implements MemberService {
         /* Redis 내부에 Refresh Token 존재하는지 확인 */
         Long tokenId = tokenProvider.getTokenId(refreshToken);
         RefreshToken storedRefreshToken = redisJwtRepository.findById(tokenId)
-                .orElseThrow(() -> new JwtException("존재하지 않는 Refresh Token입니다."));
+                .orElseThrow(() -> new JwtNotFoundException(ErrorCode.JWT_NOT_FOUND, "존재하지 않는 Refresh Token입니다."));
 
         /* Redis에 저장된 Refresh Token 정보와 요청으로부터 받아온 Refresh Token 정보가 일치하는지 확인 */
         if(!refreshToken.equals(storedRefreshToken.getTokenValue())) {
-            throw new JwtTokenMismatchException("Refresh Token 정보가 일치하지 않습니다.");
+            throw new JwtMismatchException(ErrorCode.JWT_MISMATCH, "Refresh Token 정보가 일치하지 않습니다.");
         }
 
         /* Refresh Token으로부터 사용자(Member) 정보 가져오기 */
         Member member = memberRepository.findOne(tokenProvider.getTokenId(refreshToken))
-                .orElseThrow(() -> new MemberNotFoundException("Refresh Token으로 조회되는 사용자가 없습니다."));
+                .orElseThrow(() -> new MemberNotFoundException("Refresh Token 정보로 조회되는 사용자가 없습니다."));
 
         /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 및 JWT 발급 */
         return memberAuthentication(member);
