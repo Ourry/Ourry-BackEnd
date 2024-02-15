@@ -58,10 +58,10 @@ public class MemberServiceImpl implements MemberService {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
 
-        /* 이메일 인증여부 확안
+        /* 이메일 인증여부 확안 */
         if(redisEmailAuthentication.getAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(dto.getEmail()).equals("Y")) {
             throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
-        } */
+        }
 
         /* 회원가입 */
         Member member = Member.builder()
