@@ -23,7 +23,7 @@ public enum ErrorCode {
     ILLEGAL_ARGUMENT("A005", "올바르지 않은 JWT 토큰 형식입니다.", 401), // JWT Claims 정보 없음
     NOT_LOGGED_IN("A006", "로그인 정보가 존재하지 않습니다.", 401), // 로그인 정보 없음
     JWT_NOT_FOUND("A007", "JWT 토큰 정보가 존재하지 않습니다.", 401), // 존재하지 않는 Refresh Token
-    JWT_MISMATCH("A008", "JWT 토큰 정보가 일치하지 않습니다.", 401), // Refresh Token 값 불일치
+    JWT_MISMATCH("A008", "JWT 인증 정보가 일치하지 않습니다.", 401), // Refresh Token 값 불일치
 
     // 400
     BAD_REQUEST("400", "잘못된 요청입니다.", 400),
