@@ -16,42 +16,42 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SecurityException.class)
     protected ResponseEntity<ErrorResponse> handleSecurityException(final SecurityException e) {
         log.error("SecurityException", e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.UNAUTHORIZED, "잘못된 JWT 서명입니다.");
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.JWT_MALFORMED);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(MalformedJwtException.class)
     protected ResponseEntity<ErrorResponse> handleMalformedJwtException(final MalformedJwtException e) {
         log.error("MalformedJwtException", e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.UNAUTHORIZED, "잘못된 JWT 토큰입니다.");
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.JWT_MALFORMED);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
-    protected ResponseEntity<ErrorResponse> handleExpiredJwtException(ExpiredJwtException e) {
+    protected ResponseEntity<ErrorResponse> handleExpiredJwtException(final ExpiredJwtException e) {
         log.error("ExpiredJwtException", e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.UNAUTHORIZED, "JWT 토큰이 만료됐습니다. 토큰을 재발급해주세요.");
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.JWT_EXPIRED);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    protected ResponseEntity<ErrorResponse> handleBadCredentialException(BadCredentialsException e) {
+    protected ResponseEntity<ErrorResponse> handleBadCredentialException(final BadCredentialsException e) {
         log.error("BadCredentialException", e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.UNAUTHORIZED, "유효하지 않은 JWT 토큰입니다.");
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.BAD_CREDENTIALS);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(UnsupportedJwtException.class)
-    protected ResponseEntity<ErrorResponse> handleUnsupportedJwtException(UnsupportedJwtException e) {
+    protected ResponseEntity<ErrorResponse> handleUnsupportedJwtException(final UnsupportedJwtException e) {
         log.error("UnsupportedJwtException", e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.UNAUTHORIZED, "지원되지 않느 JWT 토큰입니다.");
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.JWT_UNSUPPORTED);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     protected ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         log.error("IllegalArgumentException", e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.UNAUTHORIZED, "올바르지 않는 JWT 토큰 형식입니다.");
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.ILLEGAL_ARGUMENT);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ErrorResponse> handleServerException(final Exception e) {
         log.error("ServerException", e);
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR, "알 수 없는 오류가 발생했습니다. 관리자에게 문의해주세요.");
+        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }

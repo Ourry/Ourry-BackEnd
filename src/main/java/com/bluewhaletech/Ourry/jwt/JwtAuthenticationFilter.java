@@ -52,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch(UnsupportedJwtException e) {
             request.setAttribute("exception", ErrorCode.JWT_UNSUPPORTED.getCode());
         } catch(IllegalArgumentException e) {
-            request.setAttribute("exception", ErrorCode.INCORRECT_FORM.getCode());
+            request.setAttribute("exception", ErrorCode.ILLEGAL_ARGUMENT.getCode());
         }
         filterChain.doFilter(request, response);
     }

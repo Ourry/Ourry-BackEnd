@@ -16,14 +16,14 @@ public enum ErrorCode {
     EMAIL_AUTHENTICATION_CODE_MISMATCH("M006", "이메일 인증코드가 일치하지 않습니다. 다시 확인해주세요.", 400), // 이메일 인증코드 불일치
 
     // 인증
-    NOT_LOGGED_IN("A001", "로그인 정보가 존재하지 않습니다.", 401),
     JWT_EXPIRED("A001", "JWT 토큰이 만료됐습니다. 토큰을 재발급해주세요.", 401), // 유효시간이 만료된 JWT
     JWT_MALFORMED("A002", "유효하지 않은 JWT 토큰입니다.", 401), // 유효하지 않은 JWT
     JWT_UNSUPPORTED("A003", "지원되지 않는 JWT 토큰입니다.", 401), // 지원되지 않는 JWT
     BAD_CREDENTIALS("A004", "자격 증명에 실패했습니다. 아이디 또는 비밀번호를 다시 확인해주세요.", 401), // ID 또는 PW 불일치
-    INCORRECT_FORM("A005", "올바르지 않은 JWT 토큰 형식입니다.", 401), // 비어있는 JWT Claims
-    JWT_NOT_FOUND("A006", "JWT 토큰 정보를 찾을 수 없습니다.", 401), // 저장되지 않은 Refresh Token
-    JWT_MISMATCH("A007", "JWT 토큰 정보가 일치하지 않습니다.", 401), // Refresh Token 불일치
+    ILLEGAL_ARGUMENT("A005", "올바르지 않은 JWT 토큰 형식입니다.", 401), // JWT Claims 정보 없음
+    NOT_LOGGED_IN("A006", "로그인 정보가 존재하지 않습니다.", 401), // 로그인 정보 없음
+    JWT_NOT_FOUND("A007", "JWT 토큰 정보가 존재하지 않습니다.", 401), // 존재하지 않는 Refresh Token
+    JWT_MISMATCH("A008", "JWT 토큰 정보가 일치하지 않습니다.", 401), // Refresh Token 값 불일치
 
     // 400
     BAD_REQUEST("400", "잘못된 요청입니다.", 400),

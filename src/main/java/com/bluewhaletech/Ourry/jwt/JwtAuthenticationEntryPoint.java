@@ -27,8 +27,8 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             setErrorResponse(response, ErrorCode.BAD_CREDENTIALS);
         } else if(exception.equals(ErrorCode.JWT_UNSUPPORTED.getCode())) {
             setErrorResponse(response, ErrorCode.JWT_UNSUPPORTED);
-        } else if(exception.equals(ErrorCode.INCORRECT_FORM.getCode())) {
-            setErrorResponse(response, ErrorCode.INCORRECT_FORM);
+        } else if(exception.equals(ErrorCode.ILLEGAL_ARGUMENT.getCode())) {
+            setErrorResponse(response, ErrorCode.ILLEGAL_ARGUMENT);
         }
     }
 
