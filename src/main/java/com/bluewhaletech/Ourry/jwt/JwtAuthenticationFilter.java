@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             request.setAttribute("exception", ErrorCode.JWT_MALFORMED.getCode());
         } catch(ExpiredJwtException e) {
             request.setAttribute("exception", ErrorCode.JWT_EXPIRED.getCode());
-        } catch (BadCredentialsException e) {
+        } catch(BadCredentialsException e) {
             request.setAttribute("exception", ErrorCode.BAD_CREDENTIALS.getCode());
         } catch(UnsupportedJwtException e) {
             request.setAttribute("exception", ErrorCode.JWT_UNSUPPORTED.getCode());
