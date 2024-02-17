@@ -58,8 +58,8 @@ public class MemberServiceImpl implements MemberService {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
 
-        /* 이메일 인증여부 확안 */
-        if(redisEmailAuthentication.getAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(dto.getEmail()).equals("Y")) {
+        /* 이메일 인증여부 확인 */
+        if(redisEmailAuthentication.getEmailAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkEmailAuthentication(dto.getEmail()).equals("Y")) {
             throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
         }
 
@@ -72,6 +72,9 @@ public class MemberServiceImpl implements MemberService {
                 .role(MemberRole.USER)
                 .build();
         memberRepository.save(member);
+
+        /* Redis 내부에 저장된 이메일 인증 기록 삭제 */
+        redisEmailAuthentication.deleteEmailAuthenticationHistory(member.getEmail());
     }
 
     @Transactional
@@ -82,7 +85,7 @@ public class MemberServiceImpl implements MemberService {
 
         /* 비밀번호 일치 확인 */
         if(!passwordEncoder.matches(dto.getPassword(), member.getPassword())) {
-            throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
+            throw new PasswordConfirmException("비밀번호가 일치하지 않습니다.");
         }
 
         /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 및 JWT 발급 */
@@ -124,16 +127,10 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public void sendAuthenticationCode(EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
-        /* 이메일 중복 확인 */
-        jpaMemberRepository.findByEmail(dto.getEmail())
-                .ifPresent(member -> {
-                    throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
-                });
-
         /* 인증코드 생성 및 유효기간 5분으로 설정 */
         String code = createRandomCode();
         /* Redis 내부에 생성한 인증코드 저장 */
-        redisEmailAuthentication.setAuthenticationExpire(dto.getEmail(), code, 5L);
+        redisEmailAuthentication.setEmailAuthenticationExpire(dto.getEmail(), code, 5L);
 
         String text = "";
         text += "안녕하세요. Ourry입니다.";
@@ -155,7 +152,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void emailAuthentication(EmailAuthenticationDTO dto) {
         /* 회원 이메일로 전송된 인증코드 */
-        String code = redisEmailAuthentication.getAuthenticationCode(dto.getEmail());
+        String code = redisEmailAuthentication.getEmailAuthenticationCode(dto.getEmail());
 
         /* Redis 내부에 이메일이 존재하는지 확인 */
         if(code == null) {
@@ -168,7 +165,7 @@ public class MemberServiceImpl implements MemberService {
         }
 
         /* 이메일 인증 완료 처리 */
-        redisEmailAuthentication.setAuthenticationComplete(dto.getEmail());
+        redisEmailAuthentication.setEmailAuthenticationComplete(dto.getEmail());
     }
 
     @Transactional
@@ -176,19 +173,22 @@ public class MemberServiceImpl implements MemberService {
         /* 이메일(회원) 존재 확인 */
         Member member = jpaMemberRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
 
-        /* 이메일 인증여부 확안 */
-        if(redisEmailAuthentication.getAuthenticationCode(member.getEmail()) == null || !redisEmailAuthentication.checkAuthentication(member.getEmail()).equals("Y")) {
+        /* 이메일 인증여부 확인 */
+        if(redisEmailAuthentication.getEmailAuthenticationCode(member.getEmail()) == null || !redisEmailAuthentication.checkEmailAuthentication(member.getEmail()).equals("Y")) {
             throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
         }
 
         /* '새 비밀번호'와 '새 비밀번호확인' 값 비교 */
         if(!dto.getNewPassword().equals(dto.getConfirmPassword())) {
-            throw new PasswordMismatchException("비밀번호가 일치하지 않습니다.");
+            throw new PasswordConfirmException("비밀번호 확인 값이 일치하지 않습니다.");
         }
 
         /* 회원 비밀번호 변경 */
         member.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         memberRepository.save(member);
+
+        /* Redis 내부에 저장된 이메일 인증 기록 삭제 */
+        redisEmailAuthentication.deleteEmailAuthenticationHistory(member.getEmail());
     }
 
     @Transactional

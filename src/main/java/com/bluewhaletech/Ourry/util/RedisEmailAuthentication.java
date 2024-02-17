@@ -16,25 +16,31 @@ public class RedisEmailAuthentication {
         this.redisTemplate = redisTemplate;
     }
 
-    public String checkAuthentication(String key) {
+    public String checkEmailAuthentication(String key) {
         HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         return hashOperations.get(key, "auth");
     }
 
-    public String getAuthenticationCode(String key) {
+    public String getEmailAuthenticationCode(String key) {
         HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         return hashOperations.get(key, "code");
     }
 
-    public void setAuthenticationExpire(String email, String code, long duration) {
+    public void setEmailAuthenticationExpire(String email, String code, long duration) {
         HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         hashOperations.put(email, "code", code);
         hashOperations.put(email, "auth", "N");
         redisTemplate.expire(email, Duration.ofMinutes(duration));
     }
 
-    public void setAuthenticationComplete(String email) {
+    public void setEmailAuthenticationComplete(String email) {
         HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         hashOperations.put(email, "auth", "Y");
+    }
+
+    public void deleteEmailAuthenticationHistory(String key) {
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
+        hashOperations.delete(key, "code");
+        hashOperations.delete(key, "auth");
     }
 }

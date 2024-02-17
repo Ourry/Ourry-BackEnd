@@ -16,19 +16,22 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         /* 유효한 자격증명을 제공하지 않은 상태에서 접근 시 '401 Unauthorized' 반환 */
-        String exception = request.getAttribute("exception").toString();
-        if(exception == null || exception.isEmpty()) {
-            setErrorResponse(response, ErrorCode.NOT_LOGGED_IN);
-        } else if(exception.equals(ErrorCode.JWT_MALFORMED.getCode())) {
-            setErrorResponse(response, ErrorCode.JWT_MALFORMED);
-        } else if(exception.equals(ErrorCode.JWT_EXPIRED.getCode())) {
-            setErrorResponse(response, ErrorCode.JWT_EXPIRED);
-        } else if(exception.equals(ErrorCode.BAD_CREDENTIALS.getCode())) {
-            setErrorResponse(response, ErrorCode.BAD_CREDENTIALS);
-        } else if(exception.equals(ErrorCode.JWT_UNSUPPORTED.getCode())) {
-            setErrorResponse(response, ErrorCode.JWT_UNSUPPORTED);
-        } else if(exception.equals(ErrorCode.ILLEGAL_ARGUMENT.getCode())) {
-            setErrorResponse(response, ErrorCode.ILLEGAL_ARGUMENT);
+        Object attribute = request.getAttribute("exception");
+        if(attribute != null) {
+            String exception = attribute.toString();
+            if(exception.isEmpty()) {
+                setErrorResponse(response, ErrorCode.NOT_LOGGED_IN);
+            } else if(exception.equals(ErrorCode.JWT_MALFORMED.getCode())) {
+                setErrorResponse(response, ErrorCode.JWT_MALFORMED);
+            } else if(exception.equals(ErrorCode.JWT_EXPIRED.getCode())) {
+                setErrorResponse(response, ErrorCode.JWT_EXPIRED);
+            } else if(exception.equals(ErrorCode.BAD_CREDENTIALS.getCode())) {
+                setErrorResponse(response, ErrorCode.BAD_CREDENTIALS);
+            } else if(exception.equals(ErrorCode.JWT_UNSUPPORTED.getCode())) {
+                setErrorResponse(response, ErrorCode.JWT_UNSUPPORTED);
+            } else if(exception.equals(ErrorCode.ILLEGAL_ARGUMENT.getCode())) {
+                setErrorResponse(response, ErrorCode.ILLEGAL_ARGUMENT);
+            }
         }
     }
 

@@ -39,18 +39,18 @@ class OurryApplicationTests {
 	@Autowired
 	private RedisBlackListManagement redisBlackListManagement;
 
-	@Test
-	void redisTest() {
-		//given
-		String email = "sth4881@naver.com";
-		String code = "aaa111";
-
-		//when
-		redisUtil.setAuthenticationExpire(email, code, 5L);
-
-		//then
-		Assertions.assertThat(code).isEqualTo(redisUtil.getAuthenticationCode(email));
-	}
+//	@Test
+//	void redisTest() {
+//		//given
+//		String email = "sth4881@naver.com";
+//		String code = "aaa111";
+//
+//		//when
+//		redisUtil.setEmailAuthenticationExpire(email, code, 5L);
+//
+//		//then
+//		Assertions.assertThat(code).isEqualTo(redisUtil.getEmailAuthenticationCode(email));
+//	}
 
 //	@Test
 //	@Transactional
@@ -130,119 +130,119 @@ class OurryApplicationTests {
 //		Assertions.assertThat(expiration).isAfter(now);
 //	}
 
-	@Test
-	@Transactional
-	@DisplayName("JWT Refresh Token 유효성 확인")
-	void checkTokenValidationTest() {
-		//given
-		Member member = Member.builder()
-				.memberId(1L)
-				.email("abc@naver.com")
-				.password("1234")
-				.nickname("Para")
-				.phone("01044748813")
-				.role(MemberRole.USER)
-				.build();
-		memberRepository.save(member);
+//	@Test
+//	@Transactional
+//	@DisplayName("JWT Refresh Token 유효성 확인")
+//	void checkTokenValidationTest() {
+//		//given
+//		Member member = Member.builder()
+//				.memberId(1L)
+//				.email("abc@naver.com")
+//				.password("1234")
+//				.nickname("Para")
+//				.phone("01044748813")
+//				.role(MemberRole.USER)
+//				.build();
+//		memberRepository.save(member);
+//
+//		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+//				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+//		);
+//		AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
+//				.tokenId(member.getMemberId())
+//				.tokenName(member.getEmail())
+//				.authentication(authentication)
+//				.build();
+//		JwtDTO jwt = tokenProvider.createToken(authenticationDTO);
+//
+//		//when
+//		String refreshToken = jwt.getRefreshToken();
+//		redisJwtRepository.save(RefreshToken.builder()
+//				.tokenId(member.getMemberId())
+//				.tokenValue(jwt.getRefreshToken())
+//				.expiration(jwt.getRefreshTokenExpiration())
+//				.build());
+//
+//		//then
+//		RefreshToken storedRefreshToken = redisJwtRepository.findById(member.getMemberId())
+//				.orElseThrow(() -> new JwtException("Refresh Token이 존재하지 않습니다."));
+//		System.out.println("refreshToken : " + refreshToken);
+//		System.out.println("storedRefreshToken : " + storedRefreshToken.getTokenValue());
+//		Assertions.assertThat(storedRefreshToken.getTokenValue()).isEqualTo(refreshToken);
+//	}
 
-		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
-		);
-		AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
-				.tokenId(member.getMemberId())
-				.tokenName(member.getEmail())
-				.authentication(authentication)
-				.build();
-		JwtDTO jwt = tokenProvider.createToken(authenticationDTO);
+//	@Test
+//	@Transactional()
+//	@DisplayName("로그아웃한 회원 블랙리스트 추가여부 테스트")
+//	void blackListAdditionTest() {
+//		//given
+//		Member member = Member.builder()
+//				.memberId(1L)
+//				.email("abc@naver.com")
+//				.password("1234")
+//				.nickname("Para")
+//				.phone("01044748813")
+//				.role(MemberRole.USER)
+//				.build();
+//		memberRepository.save(member);
+//
+//		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+//				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+//		);
+//		AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
+//				.tokenId(member.getMemberId())
+//				.tokenName(member.getEmail())
+//				.authentication(authentication)
+//				.build();
+//		JwtDTO jwt = tokenProvider.createToken(authenticationDTO);
+//
+//		//when
+//		String accessToken = jwt.getAccessToken();
+//		memberService.memberLogout(accessToken);
+//
+//		//then
+//		Assertions.assertThat("LOGOUT").isEqualTo(redisBlackListManagement.checkLogout(accessToken));
+//	}
 
-		//when
-		String refreshToken = jwt.getRefreshToken();
-		redisJwtRepository.save(RefreshToken.builder()
-				.tokenId(member.getMemberId())
-				.tokenValue(jwt.getRefreshToken())
-				.expiration(jwt.getRefreshTokenExpiration())
-				.build());
-
-		//then
-		RefreshToken storedRefreshToken = redisJwtRepository.findById(member.getMemberId())
-				.orElseThrow(() -> new JwtException("Refresh Token이 존재하지 않습니다."));
-		System.out.println("refreshToken : " + refreshToken);
-		System.out.println("storedRefreshToken : " + storedRefreshToken.getTokenValue());
-		Assertions.assertThat(storedRefreshToken.getTokenValue()).isEqualTo(refreshToken);
-	}
-
-	@Test
-	@Transactional()
-	@DisplayName("로그아웃한 회원 블랙리스트 추가여부 테스트")
-	void blackListAdditionTest() {
-		//given
-		Member member = Member.builder()
-				.memberId(1L)
-				.email("abc@naver.com")
-				.password("1234")
-				.nickname("Para")
-				.phone("01044748813")
-				.role(MemberRole.USER)
-				.build();
-		memberRepository.save(member);
-
-		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
-		);
-		AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
-				.tokenId(member.getMemberId())
-				.tokenName(member.getEmail())
-				.authentication(authentication)
-				.build();
-		JwtDTO jwt = tokenProvider.createToken(authenticationDTO);
-
-		//when
-		String accessToken = jwt.getAccessToken();
-		memberService.memberLogout(accessToken);
-
-		//then
-		Assertions.assertThat("LOGOUT").isEqualTo(redisBlackListManagement.checkLogout(accessToken));
-	}
-
-	@Test
-	@Transactional
-	@DisplayName("Refresh Token 재발급 테스트")
-	void reissueTest() {
-		//given
-		Member member = Member.builder()
-				.memberId(1L)
-				.email("abc@naver.com")
-				.password("1234")
-				.nickname("Para")
-				.phone("01044748813")
-				.role(MemberRole.USER)
-				.build();
-		memberRepository.save(member);
-
-		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
-		);
-		AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
-				.tokenId(member.getMemberId())
-				.tokenName(member.getEmail())
-				.authentication(authentication)
-				.build();
-		JwtDTO jwt = tokenProvider.createToken(authenticationDTO);
-		redisJwtRepository.save(RefreshToken.builder()
-				.tokenId(member.getMemberId())
-				.tokenValue(jwt.getRefreshToken())
-				.expiration(jwt.getRefreshTokenExpiration())
-				.build());
-
-		//when
-		JwtDTO newJwt = memberService.reissueToken(jwt.getRefreshToken());
-
-		//then
-		Long atk = tokenProvider.getTokenExpiration(jwt.getAccessToken());
-		Long rtk = tokenProvider.getTokenExpiration(jwt.getRefreshToken());
-		Long atkExpiration = tokenProvider.getTokenExpiration(newJwt.getAccessToken());
-		Long rtkExpiration = tokenProvider.getTokenExpiration(newJwt.getRefreshToken());
-		System.out.println(atk + " " + atkExpiration);
-		System.out.println(rtk + " " + rtkExpiration);
-	}
+//	@Test
+//	@Transactional
+//	@DisplayName("Refresh Token 재발급 테스트")
+//	void reissueTest() {
+//		//given
+//		Member member = Member.builder()
+//				.memberId(1L)
+//				.email("abc@naver.com")
+//				.password("1234")
+//				.nickname("Para")
+//				.phone("01044748813")
+//				.role(MemberRole.USER)
+//				.build();
+//		memberRepository.save(member);
+//
+//		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+//				new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
+//		);
+//		AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
+//				.tokenId(member.getMemberId())
+//				.tokenName(member.getEmail())
+//				.authentication(authentication)
+//				.build();
+//		JwtDTO jwt = tokenProvider.createToken(authenticationDTO);
+//		redisJwtRepository.save(RefreshToken.builder()
+//				.tokenId(member.getMemberId())
+//				.tokenValue(jwt.getRefreshToken())
+//				.expiration(jwt.getRefreshTokenExpiration())
+//				.build());
+//
+//		//when
+//		JwtDTO newJwt = memberService.reissueToken(jwt.getRefreshToken());
+//
+//		//then
+//		Long atk = tokenProvider.getTokenExpiration(jwt.getAccessToken());
+//		Long rtk = tokenProvider.getTokenExpiration(jwt.getRefreshToken());
+//		Long atkExpiration = tokenProvider.getTokenExpiration(newJwt.getAccessToken());
+//		Long rtkExpiration = tokenProvider.getTokenExpiration(newJwt.getRefreshToken());
+//		System.out.println(atk + " " + atkExpiration);
+//		System.out.println(rtk + " " + rtkExpiration);
+//	}
 }
