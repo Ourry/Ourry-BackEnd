@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Choice extends BaseEntity {
+public class Choice {
     @Builder
-    public Choice(Long choiceId, String detail, Long sequence, Question question) {
+    public Choice(Long choiceId, String detail, Long seq, Question question) {
         this.choiceId = choiceId;
         this.detail = detail;
-        this.sequence = sequence;
+        this.seq = seq;
         this.question = question;
     }
 
@@ -29,10 +29,10 @@ public class Choice extends BaseEntity {
     @Column(name = "detail", nullable = false)
     private String detail;
 
-    @Column(name = "sequence", nullable = false)
-    private Long sequence;
+    @Column(name = "seq", nullable = false)
+    private Long seq;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 }

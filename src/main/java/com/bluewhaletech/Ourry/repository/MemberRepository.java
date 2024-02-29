@@ -9,7 +9,7 @@ import java.util.Optional;
 @Repository
 public class MemberRepository {
     @PersistenceContext
-    EntityManager em;
+    private EntityManager em;
 
     public Long save(Member member) {
         if(member.getMemberId() == null) {

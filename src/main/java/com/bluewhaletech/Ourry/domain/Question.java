@@ -16,14 +16,14 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Question extends BaseEntity {
     @Builder
-    public Question(Long questionId, String title, String content, Character isSolved, Category category, Member member, List<Choice> choiceList) {
+    public Question(Long questionId, String title, String content, Character isSolved, Category category, Member member, List<Choice> choices) {
         this.questionId = questionId;
         this.title = title;
         this.content = content;
         this.isSolved = isSolved;
         this.member = member;
         this.category = category;
-        this.choiceList = choiceList;
+        this.choices = choices;
     }
 
     @Id
@@ -40,14 +40,14 @@ public class Question extends BaseEntity {
     @Column(name = "isSolved", nullable = false, length = 1)
     private Character isSolved;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
     @OneToMany(mappedBy = "question")
-    private List<Choice> choiceList;
+    private List<Choice> choices;
 }

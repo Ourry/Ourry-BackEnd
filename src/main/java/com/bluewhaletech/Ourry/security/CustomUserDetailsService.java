@@ -2,25 +2,21 @@ package com.bluewhaletech.Ourry.security;
 
 import com.bluewhaletech.Ourry.domain.Member;
 import com.bluewhaletech.Ourry.exception.MemberNotFoundException;
-import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
+import com.bluewhaletech.Ourry.repository.MemberJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-
 @Component
 public class CustomUserDetailsService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
-    private final JpaMemberRepository jpaMemberRepository;
+    private final MemberJpaRepository jpaMemberRepository;
 
     @Autowired
-    public CustomUserDetailsService(PasswordEncoder passwordEncoder, JpaMemberRepository jpaMemberRepository) {
+    public CustomUserDetailsService(PasswordEncoder passwordEncoder, MemberJpaRepository jpaMemberRepository) {
         this.passwordEncoder = passwordEncoder;
         this.jpaMemberRepository = jpaMemberRepository;
     }

@@ -74,6 +74,9 @@ public class SecurityConfig {
                 .requestMatchers("/member/emailAuthentication").permitAll() // 이메일 인증 API
                 .requestMatchers("/member/passwordReset").permitAll() // 비밀번호 재설정 API
                 .requestMatchers("/member/reissueToken").permitAll() // JWT 토큰 재발급 API
+
+                .requestMatchers("/article/addQuestion").permitAll()
+                .requestMatchers("/article/getQuestionList").permitAll()
                 .anyRequest().authenticated() // 위 URL 목록을 제외한 나머지 요청에 대해 인증 수행
         );
         return http.build();
