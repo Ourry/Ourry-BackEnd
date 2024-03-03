@@ -9,12 +9,9 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class ReplyDTO {
+public class SolutionDTO {
     @NotBlank
-    private String comment;
-
-    @NotBlank
-    private Long seq;
+    private String opinion;
 
     @NotBlank
     private String nickname;

@@ -9,15 +9,19 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Reply {
+public class Reply extends BaseEntity {
     @Builder
-    public Reply(String comment, Long seq) {
+    public Reply(String comment, Long seq, Member member, Solution solution) {
         this.comment = comment;
         this.seq = seq;
+        this.member = member;
+        this.solution = solution;
     }
 
-    @EmbeddedId
-    private final MemberSolutionId memberSolutionId = new MemberSolutionId();
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "reply_id", nullable = false)
+    private Long replyId;
 
     @Column(name = "comment", nullable = false)
     private String comment;
@@ -25,13 +29,11 @@ public class Reply {
     @Column(name = "seq", nullable = false)
     private Long seq;
 
-    @MapsId("memberId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @MapsId("solutionId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "solution_id")
+    @JoinColumn(name = "solution_id", nullable = false)
     private Solution solution;
 }

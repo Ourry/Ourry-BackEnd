@@ -3,8 +3,10 @@ package com.bluewhaletech.Ourry.repository;
 import com.bluewhaletech.Ourry.domain.Question;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,9 +23,16 @@ public class ArticleRepository {
         return question.getQuestionId();
     }
 
-    public Optional<Question> findAll() {
+    public Optional<List<Question>> findAll() {
+        TypedQuery<Question> query = em.createQuery("select q from Question q", Question.class);
+        return Optional.ofNullable(query.getResultList());
+    }
+
+    public Optional<Question> findOne(Long questionId) {
         return Optional.ofNullable(
-                em.createQuery("select q from Question q", Question.class).getSingleResult()
+                em.createQuery("select q from Question q where q.questionId = :questionId", Question.class)
+                        .setParameter("questionId", questionId)
+                        .getSingleResult()
         );
     }
 }

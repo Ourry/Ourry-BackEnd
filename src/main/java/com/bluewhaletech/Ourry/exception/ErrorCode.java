@@ -28,6 +28,10 @@ public enum ErrorCode {
     // 카테고리
     CATEGORY_NOT_FOUND("C001", "카테고리를 찾을 수 없습니다.", 400),
 
+    // 게시물
+    QUESTION_LOADING_FAILED("Q001", "질문 목록을 불러오지 못했습니다.", 400),
+    QUESTION_NOT_FOUND("Q002", "질문을 찾을 수 없습니다.", 400),
+
     // 400
     BAD_REQUEST("400", "잘못된 요청입니다.", 400),
     // 401

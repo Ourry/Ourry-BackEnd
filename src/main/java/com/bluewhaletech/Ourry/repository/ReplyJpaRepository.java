@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReplyJpaRepository extends org.springframework.data.repository.Repository<Reply, Long> {
     int countBySolution(Solution solution);
+
+    Reply findBySolution(Solution solution);
 }
