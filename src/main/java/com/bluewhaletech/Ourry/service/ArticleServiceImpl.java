@@ -2,10 +2,7 @@ package com.bluewhaletech.Ourry.service;
 
 import com.bluewhaletech.Ourry.domain.*;
 import com.bluewhaletech.Ourry.dto.*;
-import com.bluewhaletech.Ourry.exception.CategoryNotFoundException;
-import com.bluewhaletech.Ourry.exception.MemberNotFoundException;
-import com.bluewhaletech.Ourry.exception.QuestionLoadingFailedException;
-import com.bluewhaletech.Ourry.exception.QuestionNotFoundException;
+import com.bluewhaletech.Ourry.exception.*;
 import com.bluewhaletech.Ourry.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,15 +17,17 @@ public class ArticleServiceImpl implements ArticleService {
     private final ArticleRepository articleRepository;
     private final CategoryRepository categoryRepository;
     private final ChoiceRepository choiceRepository;
+    private final SolutionRepository solutionRepository;
     private final SolutionJpaRepository solutionJpaRepository;
     private final ReplyJpaRepository replyJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(MemberRepository memberRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
+    public ArticleServiceImpl(MemberRepository memberRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
         this.memberRepository = memberRepository;
         this.articleRepository = articleRepository;
         this.categoryRepository = categoryRepository;
         this.choiceRepository = choiceRepository;
+        this.solutionRepository = solutionRepository;
         this.solutionJpaRepository = solutionJpaRepository;
         this.replyJpaRepository = replyJpaRepository;
     }
@@ -113,7 +112,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Transactional
     public void addQuestion(QuestionRegistrationDTO dto) {
         Member member = memberRepository.findOne(dto.getMemberId())
-                .orElseThrow(() -> new MemberNotFoundException("회원이 존재하지 않습니다."));
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
         Category category = categoryRepository.findOne(dto.getCategoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("존재하지 않는 카테고리입니다."));
@@ -135,5 +134,22 @@ public class ArticleServiceImpl implements ArticleService {
                 .build();
             choiceRepository.save(choice);
         }
+    }
+
+    @Override
+    @Transactional
+    public void answerQuestion(QuestionResponseDTO dto) {
+        Member member = memberRepository.findOne(dto.getMemberId())
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+
+        Choice choice = choiceRepository.findOne(dto.getChoiceId())
+                .orElseThrow(() -> new ChoiceNotFoundException("선택지 정보를 불러올 수 없습니다."));
+
+        Solution solution = Solution.builder()
+                .opinion(dto.getOpinion())
+                .member(member)
+                .choice(choice)
+                .build();
+        solutionRepository.save(solution);
     }
 }

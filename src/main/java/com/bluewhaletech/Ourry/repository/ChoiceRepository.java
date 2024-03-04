@@ -5,6 +5,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public class ChoiceRepository {
     @PersistenceContext
@@ -16,5 +18,9 @@ public class ChoiceRepository {
         } else {
             em.merge(choice);
         }
+    }
+
+    public Optional<Choice> findOne(Long choiceId) {
+        return Optional.ofNullable(em.find(Choice.class, choiceId));
     }
 }
