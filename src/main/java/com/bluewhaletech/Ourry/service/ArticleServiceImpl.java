@@ -14,7 +14,7 @@ import java.util.List;
 @Service
 public class ArticleServiceImpl implements ArticleService {
     private final MemberRepository memberRepository;
-    private final ArticleRepository articleRepository;
+    private final QuestionRepository questionRepository;
     private final CategoryRepository categoryRepository;
     private final ChoiceRepository choiceRepository;
     private final SolutionRepository solutionRepository;
@@ -22,9 +22,9 @@ public class ArticleServiceImpl implements ArticleService {
     private final ReplyJpaRepository replyJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(MemberRepository memberRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
+    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
         this.memberRepository = memberRepository;
-        this.articleRepository = articleRepository;
+        this.questionRepository = questionRepository;
         this.categoryRepository = categoryRepository;
         this.choiceRepository = choiceRepository;
         this.solutionRepository = solutionRepository;
@@ -35,7 +35,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public List<QuestionTotalDTO> getQuestionList() {
         List<QuestionTotalDTO> list = new ArrayList<>();
-        List<Question> questions = articleRepository.findAll()
+        List<Question> questions = questionRepository.findAll()
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
         for(Question question : questions) {
             List<Solution> solutions = new ArrayList<>();
@@ -63,7 +63,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public QuestionDetailDTO getQuestionDetail(Long questionId) {
-        Question question = articleRepository.findOne(questionId)
+        Question question = questionRepository.findOne(questionId)
                 .orElseThrow(() -> new QuestionNotFoundException("질문 상세정보를 불러오는 과정에서 오류가 발생했습니다."));
 
         List<ChoiceDTO> choices = new ArrayList<>();
@@ -124,7 +124,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .member(member)
                 .category(category)
                 .build();
-        articleRepository.save(question);
+        questionRepository.save(question);
 
         for(ChoiceDTO item : dto.getChoices()) {
             Choice choice = Choice.builder()
@@ -150,6 +150,10 @@ public class ArticleServiceImpl implements ArticleService {
                 .member(member)
                 .choice(choice)
                 .build();
+
+        questionRepository.findByMemberId(member.getMemberId());
+
+
         solutionRepository.save(solution);
     }
 }

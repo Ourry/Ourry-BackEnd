@@ -1,26 +1,19 @@
 package com.bluewhaletech.Ourry;
 
-import com.bluewhaletech.Ourry.domain.Member;
-import com.bluewhaletech.Ourry.domain.MemberRole;
-import com.bluewhaletech.Ourry.domain.RefreshToken;
-import com.bluewhaletech.Ourry.dto.AuthenticationDTO;
-import com.bluewhaletech.Ourry.dto.JwtDTO;
+import com.bluewhaletech.Ourry.domain.*;
+import com.bluewhaletech.Ourry.exception.QuestionNotFoundException;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
-import com.bluewhaletech.Ourry.repository.MemberRepository;
-import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
+import com.bluewhaletech.Ourry.repository.*;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
-import io.jsonwebtoken.JwtException;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.Authentication;
 
 @SpringBootTest
 class OurryApplicationTests {
@@ -35,22 +28,83 @@ class OurryApplicationTests {
 	@Autowired
 	private MemberRepository memberRepository;
 	@Autowired
+	private QuestionRepository questionRepository;
+	@Autowired
+	private CategoryRepository categoryRepository;
+	@Autowired
+	private SolutionRepository solutionRepository;
+	@Autowired
 	private RedisJwtRepository redisJwtRepository;
 	@Autowired
 	private RedisBlackListManagement redisBlackListManagement;
 
-//	@Test
-//	void redisTest() {
-//		//given
-//		String email = "sth4881@naver.com";
-//		String code = "aaa111";
-//
-//		//when
-//		redisUtil.setEmailAuthenticationExpire(email, code, 5L);
-//
-//		//then
-//		Assertions.assertThat(code).isEqualTo(redisUtil.getEmailAuthenticationCode(email));
-//	}
+	@Test
+	@Transactional
+	void addQuestionTest() {
+		//given
+		Member member = Member.builder()
+				.email("sth48811@naver.com")
+				.password("1234")
+				.nickname("닉네임")
+				.phone("01044748813")
+				.role(MemberRole.USER)
+				.build();
+		memberRepository.save(member);
+
+		Category category = Category.builder()
+				.name("사회생활")
+				.build();
+		categoryRepository.save(category);
+
+		Question question = Question.builder()
+				.title("테스트제목")
+				.content("테스트내용")
+				.isSolved('N')
+				.member(member)
+				.category(category)
+				.build();
+		Long questionId = questionRepository.save(question);
+
+		//when
+		Question q = questionRepository.findOne(questionId)
+				.orElseThrow(() -> new QuestionNotFoundException("질문 정보를 불러올 수 없습니다."));
+
+		//then
+		Assertions.assertThat(q.getTitle()).isEqualTo(question.getTitle());
+	}
+
+	@Test
+	@Transactional
+	void answerQuestion() throws Exception {
+		//given
+		Member member = Member.builder()
+				.email("sth48811@naver.com")
+				.password("1234")
+				.nickname("닉네임")
+				.phone("01044748813")
+				.role(MemberRole.USER)
+				.build();
+		memberRepository.save(member);
+
+		Choice choice = Choice.builder()
+				.detail("대인배스럽게 화해한다")
+				.seq(2)
+				.build();
+
+		Solution solution = Solution.builder()
+				.opinion("화해하는 방법이 내 이미지를 소모하지 않으면서 이기는 방법이다.")
+				.member(member)
+				.choice(choice)
+				.build();
+		Long solutionId = solutionRepository.save(solution);
+
+		//when
+		Solution s = solutionRepository.findOne(solutionId)
+				.orElseThrow(Exception::new);
+
+		//then
+		Assertions.assertThat(solution.getOpinion()).isEqualTo(s.getOpinion());
+	}
 
 //	@Test
 //	@Transactional

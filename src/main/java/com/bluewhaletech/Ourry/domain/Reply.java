@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reply extends BaseEntity {
     @Builder
-    public Reply(String comment, Long seq, Member member, Solution solution) {
+    public Reply(String comment, int seq, Member member, Solution solution) {
         this.comment = comment;
         this.seq = seq;
         this.member = member;
@@ -27,13 +27,13 @@ public class Reply extends BaseEntity {
     private String comment;
 
     @Column(name = "seq", nullable = false)
-    private Long seq;
+    private int seq;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "solution_id", nullable = false)
     private Solution solution;
 }

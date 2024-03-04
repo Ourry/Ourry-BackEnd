@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Choice {
     @Builder
-    public Choice(Long choiceId, String detail, Long seq, Question question) {
+    public Choice(Long choiceId, String detail, int seq, Question question) {
         this.choiceId = choiceId;
         this.detail = detail;
         this.seq = seq;
@@ -30,9 +30,9 @@ public class Choice {
     private String detail;
 
     @Column(name = "seq", nullable = false)
-    private Long seq;
+    private int seq;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 }

@@ -12,6 +12,14 @@ public class CategoryRepository {
     @PersistenceContext
     private EntityManager em;
 
+    public void save(Category category) {
+        if(category.getCategoryId() == null) {
+            em.persist(category);
+        } else {
+            em.merge(category);
+        }
+    }
+
     public Optional<Category> findOne(Long categoryId) {
         return Optional.ofNullable(em.find(Category.class, categoryId));
     }

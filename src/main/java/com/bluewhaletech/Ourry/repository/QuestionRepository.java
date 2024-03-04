@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class ArticleRepository {
+public class QuestionRepository {
     @PersistenceContext
     private EntityManager em;
 
@@ -29,9 +29,13 @@ public class ArticleRepository {
     }
 
     public Optional<Question> findOne(Long questionId) {
+        return Optional.ofNullable(em.find(Question.class, questionId));
+    }
+
+    public Optional<Question> findByMemberId(Long memberId) {
         return Optional.ofNullable(
-                em.createQuery("select q from Question q where q.questionId = :questionId", Question.class)
-                        .setParameter("questionId", questionId)
+                em.createQuery("select q from Question q where member_id =:memberId", Question.class)
+                        .setParameter("member_id", memberId)
                         .getSingleResult()
         );
     }

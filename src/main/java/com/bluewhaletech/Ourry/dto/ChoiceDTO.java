@@ -11,5 +11,5 @@ public class ChoiceDTO {
     private String detail;
 
     @NotBlank
-    private Long seq;
+    private int seq;
 }

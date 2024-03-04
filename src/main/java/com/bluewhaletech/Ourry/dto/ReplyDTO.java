@@ -14,7 +14,7 @@ public class ReplyDTO {
     private String comment;
 
     @NotBlank
-    private Long seq;
+    private int seq;
 
     @NotBlank
     private String nickname;
