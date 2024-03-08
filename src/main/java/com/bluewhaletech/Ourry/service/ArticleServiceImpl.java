@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ArticleServiceImpl implements ArticleService {
@@ -40,7 +41,8 @@ public class ArticleServiceImpl implements ArticleService {
         for(Question question : questions) {
             List<Solution> solutions = new ArrayList<>();
             for(Choice choice : question.getChoices()) {
-                solutions.add(solutionJpaRepository.findByChoice(choice));
+                Optional<Solution> solution = Optional.ofNullable(solutionJpaRepository.findByChoice(choice));
+                solution.ifPresent(solutions::add);
             }
 
             int replyCnt = 0;
@@ -76,7 +78,8 @@ public class ArticleServiceImpl implements ArticleService {
                     .build();
             choices.add(c);
 
-            Solution solution = solutionJpaRepository.findByChoice(choice);
+            Solution solution = Optional.ofNullable(solutionJpaRepository.findByChoice(choice))
+                    .orElseThrow(() -> new SolutionNotFoundException("답변 정보를 불러올 수 없습니다."));
             SolutionDTO s = SolutionDTO.builder()
                     .opinion(solution.getOpinion())
                     .nickname(solution.getMember().getNickname())
@@ -128,10 +131,10 @@ public class ArticleServiceImpl implements ArticleService {
 
         for(ChoiceDTO item : dto.getChoices()) {
             Choice choice = Choice.builder()
-                .detail(item.getDetail())
-                .seq(item.getSeq())
-                .question(question)
-                .build();
+                    .detail(item.getDetail())
+                    .seq(item.getSeq())
+                    .question(question)
+                    .build();
             choiceRepository.save(choice);
         }
     }
@@ -139,21 +142,29 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     @Transactional
     public void answerQuestion(QuestionResponseDTO dto) {
+        /* 회원 존재유무 확인 */
         Member member = memberRepository.findOne(dto.getMemberId())
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
+        /* 질문 존재유무 확인 */
+        Question question = questionRepository.findOne(dto.getQuestionId())
+                .orElseThrow(() -> new QuestionNotFoundException("질문 정보를 불러올 수 없습니다."));
+
+        /* 선택지 존재유무 확인 */
         Choice choice = choiceRepository.findOne(dto.getChoiceId())
                 .orElseThrow(() -> new ChoiceNotFoundException("선택지 정보를 불러올 수 없습니다."));
+
+        /* 답변 작성유무 확인 */
+        if(solutionRepository.findWithMemberAndChoice(member, choice).isPresent()) {
+            throw new QuestionAlreadyAnsweredException("해당 질문에 대해 답변한 기록이 존재합니다.");
+        }
 
         Solution solution = Solution.builder()
                 .opinion(dto.getOpinion())
                 .member(member)
+                .question(question)
                 .choice(choice)
                 .build();
-
-        questionRepository.findByMemberId(member.getMemberId());
-
-
         solutionRepository.save(solution);
     }
 }

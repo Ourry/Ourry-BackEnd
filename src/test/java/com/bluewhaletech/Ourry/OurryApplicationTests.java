@@ -15,6 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @SpringBootTest
 class OurryApplicationTests {
 	@Autowired
@@ -31,6 +34,8 @@ class OurryApplicationTests {
 	private QuestionRepository questionRepository;
 	@Autowired
 	private CategoryRepository categoryRepository;
+	@Autowired
+	private ChoiceRepository choiceRepository;
 	@Autowired
 	private SolutionRepository solutionRepository;
 	@Autowired
@@ -85,16 +90,38 @@ class OurryApplicationTests {
 				.role(MemberRole.USER)
 				.build();
 		memberRepository.save(member);
+		
+		Category category = Category.builder()
+				.name("카테고리명")
+				.build();
+		categoryRepository.save(category);
 
-		Choice choice = Choice.builder()
-				.detail("대인배스럽게 화해한다")
+		Question question = Question.builder()
+				.title("질문제목")
+				.content("질문내용")
+				.isSolved('N')
+				.member(member)
+				.category(category)
+				.build();
+		questionRepository.save(question);
+
+		Choice c1 = Choice.builder()
+				.detail("화해하지 않고 자연스럽게 거리를 둔다.")
+				.seq(1)
+				.build();
+		choiceRepository.save(c1);
+
+		Choice c2 = Choice.builder()
+				.detail("화해하고 관계를 유지한다")
 				.seq(2)
 				.build();
+		choiceRepository.save(c2);
 
 		Solution solution = Solution.builder()
-				.opinion("화해하는 방법이 내 이미지를 소모하지 않으면서 이기는 방법이다.")
+				.opinion("화해하는 방법이 내 이미지를 소모하지 않으면서 이기는 방법이라고 생각한다.")
 				.member(member)
-				.choice(choice)
+				.question(question)
+				.choice(c2)
 				.build();
 		Long solutionId = solutionRepository.save(solution);
 

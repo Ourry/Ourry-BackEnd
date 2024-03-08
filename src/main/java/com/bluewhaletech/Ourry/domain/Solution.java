@@ -14,10 +14,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Solution extends BaseEntity {
     @Builder
-    public Solution(Long solutionId, String opinion, Member member, Choice choice) {
+    public Solution(Long solutionId, String opinion, Member member, Question question, Choice choice) {
         this.solutionId = solutionId;
         this.opinion = opinion;
         this.member = member;
+        this.question = question;
         this.choice = choice;
     }
 
@@ -32,6 +33,10 @@ public class Solution extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "choice_id", nullable = false)

@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SolutionJpaRepository extends org.springframework.data.repository.Repository<Solution, Long> {
     Solution findByChoice(Choice choice);
+
 }

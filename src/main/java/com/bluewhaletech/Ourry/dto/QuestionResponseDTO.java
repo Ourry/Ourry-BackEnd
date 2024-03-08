@@ -11,6 +11,10 @@ public class QuestionResponseDTO {
     private Long memberId;
 
     @NotBlank
+    @JsonSetter("questionId")
+    private Long questionId;
+
+    @NotBlank
     @JsonSetter("choiceId")
     private Long choiceId;
 

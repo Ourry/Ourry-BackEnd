@@ -31,12 +31,4 @@ public class QuestionRepository {
     public Optional<Question> findOne(Long questionId) {
         return Optional.ofNullable(em.find(Question.class, questionId));
     }
-
-    public Optional<Question> findByMemberId(Long memberId) {
-        return Optional.ofNullable(
-                em.createQuery("select q from Question q where member_id =:memberId", Question.class)
-                        .setParameter("member_id", memberId)
-                        .getSingleResult()
-        );
-    }
 }

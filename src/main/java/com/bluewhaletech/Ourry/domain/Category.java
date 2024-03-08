@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Category extends BaseEntity {
+public class Category {
     @Builder
     public Category(Long categoryId, String name) {
         this.categoryId = categoryId;
