@@ -20,7 +20,7 @@ public class CategoryRepository {
         }
     }
 
-    public Optional<Category> findOne(Long categoryId) {
-        return Optional.ofNullable(em.find(Category.class, categoryId));
+    public Category findOne(Long categoryId) {
+        return em.find(Category.class, categoryId);
     }
 }

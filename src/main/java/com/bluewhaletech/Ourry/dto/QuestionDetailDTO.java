@@ -18,14 +18,14 @@ public class QuestionDetailDTO {
     private String content;
 
     @NotBlank
-    private String nickname;
-
-    @NotBlank
     private String category;
 
     @NotBlank
-    @JsonSetter("solutionCnt")
-    private int solutionCnt;
+    private String nickname;
+
+    @NotBlank
+    @JsonSetter("voteCnt")
+    private int voteCnt;
 
     @NotBlank
     @JsonSetter("responseCnt")

@@ -7,38 +7,22 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uk_member_id", columnNames = "member_id")
-})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Solution extends BaseEntity {
-    @Builder
-    public Solution(Long solutionId, String opinion, Member member, Question question, Choice choice) {
-        this.solutionId = solutionId;
-        this.opinion = opinion;
-        this.member = member;
-        this.question = question;
-        this.choice = choice;
-    }
+public class Solution {
+    @EmbeddedId
+    private final VoteId voteId = new VoteId();
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "solution_id", nullable = false)
-    private Long solutionId;
+    @Builder
+    public Solution(String opinion, Vote vote) {
+        this.opinion = opinion;
+        this.vote = vote;
+    }
 
     @Column(name = "opinion")
     private String opinion;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
-    @JoinColumn(name = "question_id", nullable = false)
-    private Question question;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
-    @JoinColumn(name = "choice_id", nullable = false)
-    private Choice choice;
+    @MapsId("voteId")
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = false)
+    private Vote vote;
 }

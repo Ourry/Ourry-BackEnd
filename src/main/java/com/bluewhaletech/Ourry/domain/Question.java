@@ -16,11 +16,10 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Question extends BaseEntity {
     @Builder
-    public Question(Long questionId, String title, String content, Character isSolved, Category category, Member member, List<Choice> choices) {
+    public Question(Long questionId, String title, String content, Category category, Member member, List<Choice> choices) {
         this.questionId = questionId;
         this.title = title;
         this.content = content;
-        this.isSolved = isSolved;
         this.member = member;
         this.category = category;
         this.choices = choices;
@@ -36,9 +35,6 @@ public class Question extends BaseEntity {
 
     @Column(name = "content", nullable = false)
     private String content;
-
-    @Column(name = "isSolved", nullable = false, length = 1)
-    private Character isSolved;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "category_id", nullable = false)

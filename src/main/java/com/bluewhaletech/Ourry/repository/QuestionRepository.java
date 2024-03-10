@@ -23,12 +23,12 @@ public class QuestionRepository {
         return question.getQuestionId();
     }
 
-    public Optional<List<Question>> findAll() {
+    public List<Question> findAll() {
         TypedQuery<Question> query = em.createQuery("select q from Question q", Question.class);
-        return Optional.ofNullable(query.getResultList());
+        return query.getResultList();
     }
 
-    public Optional<Question> findOne(Long questionId) {
-        return Optional.ofNullable(em.find(Question.class, questionId));
+    public Question findOne(Long questionId) {
+        return em.find(Question.class, questionId);
     }
 }

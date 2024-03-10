@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 public class CustomUserDetailsService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
@@ -23,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Member member = jpaMemberRepository.findByEmail(email)
+        Member member = Optional.ofNullable(jpaMemberRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         return CustomUser.builder()
                 .username(email)

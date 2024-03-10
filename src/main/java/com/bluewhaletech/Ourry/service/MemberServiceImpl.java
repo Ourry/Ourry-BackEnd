@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
@@ -53,7 +54,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void createAccount(MemberRegistrationDTO dto) {
         /* 이메일 중복 확인 */
-        memberJpaRepository.findByEmail(dto.getEmail())
+        Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .ifPresent(member -> {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
@@ -80,7 +81,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public JwtDTO memberLogin(MemberLoginDTO dto) {
         /* 이메일 유효성 확인 */
-        Member member = memberJpaRepository.findByEmail(dto.getEmail())
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .orElseThrow(() -> new MemberNotFoundException("등록되지 않은 이메일입니다."));
 
         /* 비밀번호 일치 확인 */
@@ -105,7 +106,7 @@ public class MemberServiceImpl implements MemberService {
         }
 
         /* Refresh Token으로부터 사용자(Member) 정보 가져오기 */
-        Member member = memberRepository.findOne(tokenProvider.getTokenId(refreshToken))
+        Member member = Optional.ofNullable(memberRepository.findOne(tokenProvider.getTokenId(refreshToken)))
                 .orElseThrow(() -> new MemberNotFoundException("Refresh Token 정보로 조회되는 사용자가 없습니다."));
 
         /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 및 JWT 발급 */
@@ -117,7 +118,7 @@ public class MemberServiceImpl implements MemberService {
         /* Access Token으로부터 Subject(Email) 가져오기 */
         String email = tokenProvider.getTokenSubject(accessToken);
         /* Email로부터 Member ID 가져오기 */
-        Member member = memberJpaRepository.findByEmail(email)
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         /* Redis 내부에 저장된 Refresh Token 값 삭제 */
         redisJwtRepository.deleteById(member.getMemberId());
@@ -171,7 +172,8 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void passwordReset(PasswordResetDTO dto) {
         /* 이메일(회원) 존재 확인 */
-        Member member = memberJpaRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
 
         /* 이메일 인증여부 확인 */
         if(redisEmailAuthentication.getEmailAuthenticationCode(member.getEmail()) == null || !redisEmailAuthentication.checkEmailAuthentication(member.getEmail()).equals("Y")) {
@@ -192,7 +194,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public void updateProfile(MemberDTO dto) {
-        Member member = memberJpaRepository.findByEmail(dto.getEmail())
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));
     }
 
