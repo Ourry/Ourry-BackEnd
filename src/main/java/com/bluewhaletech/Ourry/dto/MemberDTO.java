@@ -26,12 +26,4 @@ public class MemberDTO {
 
     @NotEmpty
     private String phone;
-
-    @NotEmpty
-    @JsonSetter("createdAt")
-    private Date createdAt;
-
-    @NotEmpty
-    @JsonSetter("updatedAt")
-    private Date updatedAt;
 }

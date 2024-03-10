@@ -6,7 +6,7 @@ import com.bluewhaletech.Ourry.domain.RefreshToken;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.exception.*;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
-import com.bluewhaletech.Ourry.repository.JpaMemberRepository;
+import com.bluewhaletech.Ourry.repository.MemberJpaRepository;
 import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
 import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 import java.util.Random;
 
 @Slf4j
@@ -31,19 +32,19 @@ public class MemberServiceImpl implements MemberService {
     private final MailServiceImpl mailService;
     private final PasswordEncoder passwordEncoder;
     private final MemberRepository memberRepository;
-    private final JpaMemberRepository jpaMemberRepository;
+    private final MemberJpaRepository memberJpaRepository;
     private final RedisJwtRepository redisJwtRepository;
     private final RedisEmailAuthentication redisEmailAuthentication;
     private final RedisBlackListManagement redisBlackListManagement;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Autowired
-    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, JpaMemberRepository jpaMemberRepository, RedisJwtRepository redisJwtRepository, RedisEmailAuthentication redisEmailAuthentication, RedisBlackListManagement redisBlackListManagement, AuthenticationManagerBuilder authenticationManagerBuilder) {
+    public MemberServiceImpl(JwtProvider tokenProvider, MailServiceImpl mailService, PasswordEncoder passwordEncoder, MemberRepository memberRepository, MemberJpaRepository memberJpaRepository, RedisJwtRepository redisJwtRepository, RedisEmailAuthentication redisEmailAuthentication, RedisBlackListManagement redisBlackListManagement, AuthenticationManagerBuilder authenticationManagerBuilder) {
         this.tokenProvider = tokenProvider;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
         this.memberRepository = memberRepository;
-        this.jpaMemberRepository = jpaMemberRepository;
+        this.memberJpaRepository = memberJpaRepository;
         this.redisJwtRepository = redisJwtRepository;
         this.redisEmailAuthentication = redisEmailAuthentication;
         this.redisBlackListManagement = redisBlackListManagement;
@@ -53,15 +54,15 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void createAccount(MemberRegistrationDTO dto) {
         /* 이메일 중복 확인 */
-        jpaMemberRepository.findByEmail(dto.getEmail())
+        Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .ifPresent(member -> {
                     throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
                 });
 
         /* 이메일 인증여부 확인 */
-        if(redisEmailAuthentication.getEmailAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkEmailAuthentication(dto.getEmail()).equals("Y")) {
-            throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
-        }
+//        if(redisEmailAuthentication.getEmailAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkEmailAuthentication(dto.getEmail()).equals("Y")) {
+//            throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
+//        }
 
         /* 회원가입 */
         Member member = Member.builder()
@@ -80,7 +81,7 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public JwtDTO memberLogin(MemberLoginDTO dto) {
         /* 이메일 유효성 확인 */
-        Member member = jpaMemberRepository.findByEmail(dto.getEmail())
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .orElseThrow(() -> new MemberNotFoundException("등록되지 않은 이메일입니다."));
 
         /* 비밀번호 일치 확인 */
@@ -105,7 +106,7 @@ public class MemberServiceImpl implements MemberService {
         }
 
         /* Refresh Token으로부터 사용자(Member) 정보 가져오기 */
-        Member member = memberRepository.findOne(tokenProvider.getTokenId(refreshToken))
+        Member member = Optional.ofNullable(memberRepository.findOne(tokenProvider.getTokenId(refreshToken)))
                 .orElseThrow(() -> new MemberNotFoundException("Refresh Token 정보로 조회되는 사용자가 없습니다."));
 
         /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 및 JWT 발급 */
@@ -117,7 +118,7 @@ public class MemberServiceImpl implements MemberService {
         /* Access Token으로부터 Subject(Email) 가져오기 */
         String email = tokenProvider.getTokenSubject(accessToken);
         /* Email로부터 Member ID 가져오기 */
-        Member member = jpaMemberRepository.findByEmail(email)
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         /* Redis 내부에 저장된 Refresh Token 값 삭제 */
         redisJwtRepository.deleteById(member.getMemberId());
@@ -171,7 +172,8 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void passwordReset(PasswordResetDTO dto) {
         /* 이메일(회원) 존재 확인 */
-        Member member = jpaMemberRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
 
         /* 이메일 인증여부 확인 */
         if(redisEmailAuthentication.getEmailAuthenticationCode(member.getEmail()) == null || !redisEmailAuthentication.checkEmailAuthentication(member.getEmail()).equals("Y")) {
@@ -185,7 +187,6 @@ public class MemberServiceImpl implements MemberService {
 
         /* 회원 비밀번호 변경 */
         member.setPassword(passwordEncoder.encode(dto.getNewPassword()));
-        memberRepository.save(member);
 
         /* Redis 내부에 저장된 이메일 인증 기록 삭제 */
         redisEmailAuthentication.deleteEmailAuthenticationHistory(member.getEmail());
@@ -193,7 +194,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public void updateProfile(MemberDTO dto) {
-        Member member = jpaMemberRepository.findByEmail(dto.getEmail())
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));
     }
 

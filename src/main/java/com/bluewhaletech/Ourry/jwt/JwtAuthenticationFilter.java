@@ -35,7 +35,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        /* Access Token 인증이 성공한 경우 */
         try {
             String accessToken = tokenProvider.resolveToken(request, AUTHORIZATION_HEADER);
             if(StringUtils.hasText(accessToken) && tokenProvider.validateAccessToken(accessToken) && doNotLogout(accessToken)) {
@@ -51,8 +50,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             request.setAttribute("exception", ErrorCode.BAD_CREDENTIALS.getCode());
         } catch(UnsupportedJwtException e) {
             request.setAttribute("exception", ErrorCode.JWT_UNSUPPORTED.getCode());
-        } catch(IllegalArgumentException e) {
-            request.setAttribute("exception", ErrorCode.ILLEGAL_ARGUMENT.getCode());
         }
         filterChain.doFilter(request, response);
     }

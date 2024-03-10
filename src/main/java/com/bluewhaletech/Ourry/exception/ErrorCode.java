@@ -25,6 +25,17 @@ public enum ErrorCode {
     JWT_NOT_FOUND("A007", "JWT 토큰 정보가 존재하지 않습니다.", 401), // 존재하지 않는 Refresh Token
     JWT_MISMATCH("A008", "JWT 인증 정보가 일치하지 않습니다.", 401), // Refresh Token 값 불일치
 
+    // 카테고리
+    CATEGORY_NOT_FOUND("C001", "카테고리를 찾을 수 없습니다.", 400),
+
+    // 게시물
+    QUESTION_LOADING_FAILED("Q001", "질문 목록을 불러오지 못했습니다.", 400),
+    QUESTION_NOT_FOUND("Q002", "질문을 찾을 수 없습니다.", 400),
+    CHOICE_NOT_FOUND("Q003", "선택지 정보를 찾을 수 없습니다.", 400),
+    VOTE_NOT_FOUND("Q004", "투표 정보를 찾을 수 없습니다.", 400),
+    SOLUTION_NOT_FOUND("Q005", "투표에 대한 의견 정보를 찾을 수 없습니다.", 400),
+    QUESTION_ALREADY_ANSWERED("Q006", "이미 답변을 완료한 질문입니다.", 400),
+
     // 400
     BAD_REQUEST("400", "잘못된 요청입니다.", 400),
     // 401
