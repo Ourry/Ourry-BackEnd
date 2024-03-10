@@ -1,7 +1,7 @@
 package com.bluewhaletech.Ourry.repository;
 
 import com.bluewhaletech.Ourry.domain.Solution;
-import com.bluewhaletech.Ourry.domain.VoteId;
+import com.bluewhaletech.Ourry.domain.PollId;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
@@ -11,12 +11,12 @@ public class SolutionRepository {
     @PersistenceContext
     private EntityManager em;
 
-    public VoteId save(Solution solution) {
-        if(solution.getVoteId() == null) {
+    public PollId save(Solution solution) {
+        if(solution.getPollId() == null) {
             em.persist(solution);
         } else {
             em.merge(solution);
         }
-        return solution.getVoteId();
+        return solution.getPollId();
     }
 }

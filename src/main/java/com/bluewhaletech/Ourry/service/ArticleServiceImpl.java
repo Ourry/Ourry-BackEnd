@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -18,20 +19,20 @@ public class ArticleServiceImpl implements ArticleService {
     private final QuestionRepository questionRepository;
     private final CategoryRepository categoryRepository;
     private final ChoiceRepository choiceRepository;
-    private final VoteRepository voteRepository;
-    private final VoteJpaRepository voteJpaRepository;
+    private final PollRepository pollRepository;
+    private final PollJpaRepository pollJpaRepository;
     private final SolutionRepository solutionRepository;
     private final SolutionJpaRepository solutionJpaRepository;
     private final ReplyJpaRepository replyJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, VoteRepository voteRepository, VoteJpaRepository voteJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
+    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
         this.memberRepository = memberRepository;
         this.questionRepository = questionRepository;
         this.categoryRepository = categoryRepository;
         this.choiceRepository = choiceRepository;
-        this.voteRepository = voteRepository;
-        this.voteJpaRepository = voteJpaRepository;
+        this.pollRepository = pollRepository;
+        this.pollJpaRepository = pollJpaRepository;
         this.solutionRepository = solutionRepository;
         this.solutionJpaRepository = solutionJpaRepository;
         this.replyJpaRepository = replyJpaRepository;
@@ -44,17 +45,17 @@ public class ArticleServiceImpl implements ArticleService {
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
         for(Question question : questions) {
             /* 질문별 투표 데이터 목록 */
-            List<Vote> votes = Optional.ofNullable(voteJpaRepository.findByQuestion(question))
-                    .orElseThrow(() -> new VoteNotFoundException("투표 데이터를 불러오는 과정에서 오류가 발생했습니다."));
+            List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
+                    .orElseThrow(() -> new PollNotFoundException("투표 데이터를 불러오는 과정에서 오류가 발생했습니다."));
             /* 질문별 솔루션 총합 */
             int solutionCnt = 0;
-            for(Vote vote : votes) {
-                solutionCnt += solutionJpaRepository.countByVote(vote);
+            for(Poll poll : polls) {
+                solutionCnt += solutionJpaRepository.countByPoll(poll);
             }
             /* 질문별 답글 총합 */
             int replyCnt = 0;
-            for(Vote vote : votes) {
-                replyCnt += replyJpaRepository.countByVote(vote);
+            for(Poll poll : polls) {
+                replyCnt += replyJpaRepository.countByPoll(poll);
             }
 
             QuestionTotalDTO dto = QuestionTotalDTO.builder()
@@ -62,7 +63,7 @@ public class ArticleServiceImpl implements ArticleService {
                     .content(question.getContent())
                     .nickname(question.getMember().getNickname())
                     .createdAt(question.getCreatedAt())
-                    .voteCnt(votes.size())
+                    .pollCnt(polls.size())
                     .responseCnt(solutionCnt+replyCnt)
                     .build();
             list.add(dto);
@@ -79,39 +80,51 @@ public class ArticleServiceImpl implements ArticleService {
         List<ChoiceDTO> choices = new ArrayList<>();
         for(Choice choice : question.getChoices()) {
             ChoiceDTO c = ChoiceDTO.builder()
+                    .sequence(choice.getSequence())
                     .detail(choice.getDetail())
-                    .seq(choice.getSeq())
                     .build();
             choices.add(c);
         }
 
         /* 질문별 투표 데이터 목록 */
-        List<Vote> votes = Optional.ofNullable(voteJpaRepository.findByQuestion(question))
-                .orElseThrow(() -> new VoteNotFoundException("질문 데이터 목록을 불러와는 과정에서 오류가 발생했습니다."));
+        List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
+                .orElseThrow(() -> new PollNotFoundException("질문 데이터 목록을 불러와는 과정에서 오류가 발생했습니다."));
+        List<PollResultDTO> pollResults = new ArrayList<>();
+        for(Poll poll : polls) {
+            PollResultDTO pollResult = PollResultDTO.builder()
+                    .sequence(poll.getChoice().getSequence())
+                    .memberId(poll.getMember().getMemberId())
+                    .build();
+            pollResults.add(pollResult);
+        }
 
         /* 투표별 솔루션 데이터 목록 */
         List<SolutionDTO> solutions = new ArrayList<>();
-        for(Vote vote : votes) {
-            Solution solution = solutionJpaRepository.findByVote(vote);
-            SolutionDTO s = SolutionDTO.builder()
-                    .opinion(solution.getOpinion())
-                    .nickname(vote.getMember().getNickname())
-                    .createdAt(vote.getCreatedAt())
-                    .build();
-            solutions.add(s);
+        for(Poll poll : polls) {
+            Solution solution = solutionJpaRepository.findByPoll(poll);
+            if(Optional.ofNullable(solution).isPresent()) {
+                SolutionDTO s = SolutionDTO.builder()
+                        .sequence(poll.getChoice().getSequence())
+                        .opinion(solution.getOpinion())
+                        .nickname(poll.getMember().getNickname())
+                        .createdAt(poll.getCreatedAt())
+                        .build();
+                solutions.add(s);
+            }
         }
 
         /* 투표별 답글 데이터 목록 */
         List<ReplyDTO> replies = new ArrayList<>();
-        for(Vote vote : votes) {
-            Reply reply = replyJpaRepository.findByVote(vote);
-            ReplyDTO r = ReplyDTO.builder()
-                    .comment(reply.getComment())
-                    .seq(reply.getSeq())
-                    .nickname(reply.getMember().getNickname())
-                    .createdAt(reply.getCreatedAt())
-                    .build();
-            replies.add(r);
+        for(Poll poll : polls) {
+            Reply reply = replyJpaRepository.findByPoll(poll);
+            if(Optional.ofNullable(reply).isPresent()) {
+                ReplyDTO r = ReplyDTO.builder()
+                        .comment(reply.getComment())
+                        .nickname(reply.getMember().getNickname())
+                        .createdAt(reply.getCreatedAt())
+                        .build();
+                replies.add(r);
+            }
         }
 
         return QuestionDetailDTO.builder()
@@ -119,10 +132,11 @@ public class ArticleServiceImpl implements ArticleService {
                 .content(question.getContent())
                 .category(question.getCategory().getName())
                 .nickname(question.getMember().getNickname())
-                .voteCnt(votes.size())
+                .pollCnt(polls.size())
                 .responseCnt(solutions.size()+replies.size())
                 .createdAt(question.getCreatedAt())
                 .choices(choices)
+                .pollResults(pollResults)
                 .solutions(solutions)
                 .replies(replies)
                 .build();
@@ -131,7 +145,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     @Transactional
     public void addQuestion(QuestionRegistrationDTO dto) {
-        Member member = Optional.of(memberRepository.findOne(dto.getMemberId()))
+        Member member = Optional.ofNullable(memberRepository.findOne(dto.getMemberId()))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
         Category category = Optional.ofNullable(categoryRepository.findOne(dto.getCategoryId()))
@@ -147,8 +161,8 @@ public class ArticleServiceImpl implements ArticleService {
 
         for(ChoiceDTO item : dto.getChoices()) {
             Choice choice = Choice.builder()
+                    .sequence(item.getSequence())
                     .detail(item.getDetail())
-                    .seq(item.getSeq())
                     .question(question)
                     .build();
             choiceRepository.save(choice);
@@ -161,31 +175,37 @@ public class ArticleServiceImpl implements ArticleService {
         /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberRepository.findOne(dto.getMemberId()))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
-
+        
         /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(dto.getQuestionId()))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보를 불러올 수 없습니다."));
 
+        /* 자문자답여부 확인 */
+        if(Objects.equals(dto.getMemberId(), question.getMember().getMemberId())) {
+            throw new AnswerToOneselfException("본인이 질문한 글에는 의견을 제출할 수 없습니다.");
+        }
+
         /* 선택지 존재유무 확인 */
-        Choice choice = Optional.ofNullable(choiceRepository.findOne(dto.getChoiceId()))
+        Choice choice = Optional.ofNullable(choiceRepository.findByQuestionAndSequence(question, dto.getSequence()))
                 .orElseThrow(() -> new ChoiceNotFoundException("선택지 정보를 불러올 수 없습니다."));
 
         /* 답변 작성유무 확인 */
-        if(voteRepository.findByMemberAndChoice(member, choice).isPresent()) {
+        if(Optional.ofNullable(pollRepository.findByMemberAndChoice(member, choice)).isPresent()) {
             throw new QuestionAlreadyAnsweredException("해당 질문에 대해 답변한 기록이 존재합니다.");
         }
 
-        Vote vote = Vote.builder()
+        Poll poll = Poll.builder()
                 .member(member)
                 .question(question)
                 .choice(choice)
                 .build();
-        voteRepository.save(vote);
+        pollRepository.save(poll);
 
-        if(!dto.getOpinion().isEmpty()) {
+        String opinion = dto.getOpinion();
+        if(opinion != null) {
             Solution solution = Solution.builder()
-                    .opinion(dto.getOpinion())
-                    .vote(vote)
+                    .opinion(opinion)
+                    .poll(poll)
                     .build();
             solutionRepository.save(solution);
         }

@@ -14,10 +14,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Choice {
     @Builder
-    public Choice(Long choiceId, String detail, int seq, Question question) {
+    public Choice(Long choiceId, String detail, int sequence, Question question) {
         this.choiceId = choiceId;
+        this.sequence = sequence;
         this.detail = detail;
-        this.seq = seq;
         this.question = question;
     }
 
@@ -26,11 +26,12 @@ public class Choice {
     @Column(name = "choice_id", nullable = false)
     private Long choiceId;
 
+    @Column(name = "sequence", nullable = false)
+    private int sequence;
+
     @Column(name = "detail", nullable = false)
     private String detail;
 
-    @Column(name = "seq", nullable = false)
-    private int seq;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "question_id", nullable = false)

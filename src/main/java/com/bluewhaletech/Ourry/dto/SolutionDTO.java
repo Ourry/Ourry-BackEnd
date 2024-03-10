@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 @Builder
 public class SolutionDTO {
     @NotBlank
+    private int sequence;
+
+    @NotBlank
     private String opinion;
 
     @NotBlank

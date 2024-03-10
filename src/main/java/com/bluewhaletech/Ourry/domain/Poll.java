@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Vote extends BaseEntity {
+public class Poll extends BaseEntity {
     @Builder
-    public Vote(Long voteId, Member member, Question question, Choice choice) {
-        this.voteId = voteId;
+    public Poll(Long pollId, Member member, Question question, Choice choice) {
+        this.pollId = pollId;
         this.member = member;
         this.question = question;
         this.choice = choice;
@@ -23,8 +23,8 @@ public class Vote extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "vote_id", nullable = false)
-    private Long voteId;
+    @Column(name = "poll_id", nullable = false)
+    private Long pollId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "member_id", nullable = false)

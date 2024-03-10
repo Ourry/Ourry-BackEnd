@@ -11,18 +11,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Solution {
     @EmbeddedId
-    private final VoteId voteId = new VoteId();
+    private final PollId pollId = new PollId();
 
     @Builder
-    public Solution(String opinion, Vote vote) {
+    public Solution(String opinion, Poll poll) {
         this.opinion = opinion;
-        this.vote = vote;
+        this.poll = poll;
     }
 
     @Column(name = "opinion")
     private String opinion;
 
-    @MapsId("voteId")
+    @MapsId("pollId")
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = false)
-    private Vote vote;
+    private Poll poll;
 }

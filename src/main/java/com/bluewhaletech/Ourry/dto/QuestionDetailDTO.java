@@ -24,8 +24,8 @@ public class QuestionDetailDTO {
     private String nickname;
 
     @NotBlank
-    @JsonSetter("voteCnt")
-    private int voteCnt;
+    @JsonSetter("pollCnt")
+    private int pollCnt;
 
     @NotBlank
     @JsonSetter("responseCnt")
@@ -36,6 +36,9 @@ public class QuestionDetailDTO {
 
     @NotBlank
     private List<ChoiceDTO> choices;
+
+    @NotBlank
+    private List<PollResultDTO> pollResults;
 
     @NotBlank
     private List<SolutionDTO> solutions;

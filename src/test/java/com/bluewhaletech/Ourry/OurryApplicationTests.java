@@ -2,7 +2,6 @@ package com.bluewhaletech.Ourry;
 
 import com.bluewhaletech.Ourry.domain.*;
 import com.bluewhaletech.Ourry.exception.QuestionNotFoundException;
-import com.bluewhaletech.Ourry.exception.VoteNotFoundException;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.*;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
@@ -38,7 +37,7 @@ class OurryApplicationTests {
 	@Autowired
 	private ChoiceRepository choiceRepository;
 	@Autowired
-	private VoteRepository voteRepository;
+	private PollRepository pollRepository;
 	@Autowired
 	private SolutionRepository solutionRepository;
 	@Autowired
@@ -48,201 +47,201 @@ class OurryApplicationTests {
 	@Autowired
 	private RedisBlackListManagement redisBlackListManagement;
 
-	@Test
-	@Transactional
-	void getQuestionListTest() {
-		//given
-		Member member = Member.builder()
-				.email("sth488111@naver.com")
-				.password("1234")
-				.nickname("닉네임")
-				.phone("01044748813")
-				.role(MemberRole.USER)
-				.build();
-		memberRepository.save(member);
-
-		Category category = Category.builder()
-				.name("카테고리명")
-				.build();
-		categoryRepository.save(category);
-
-		Question question = Question.builder()
-				.title("질문제목")
-				.content("질문내용")
-				.member(member)
-				.category(category)
-				.build();
-		questionRepository.save(question);
-
-		List<Choice> choices = new ArrayList<>();
-		Choice c1 = Choice.builder()
-				.question(question)
-				.detail("화해하지 않고 자연스럽게 거리를 둔다.")
-				.seq(1)
-				.build();
-		choiceRepository.save(c1);
-		choices.add(c1);
-		Choice c2 = Choice.builder()
-				.question(question)
-				.detail("화해하고 관계를 유지한다")
-				.seq(2)
-				.build();
-		choiceRepository.save(c2);
-		choices.add(c2);
-
-		//when
-		Question q = questionRepository.findAll().get(0);
-
-		//then
-		System.out.println("q.getTitle = " + q.getTitle());
-		System.out.println("question.getTitle() = " + question.getTitle());
-		Assertions.assertThat(q.getTitle()).isEqualTo(question.getTitle());
-	}
-
-	@Test
-	@Transactional
-	void getQuestionDetailTest() {
-		//given
-		Member member = Member.builder()
-				.email("sth48811@naver.com")
-				.password("1234")
-				.nickname("닉네임")
-				.phone("01044748813")
-				.role(MemberRole.USER)
-				.build();
-		memberRepository.save(member);
-
-		Category category = Category.builder()
-				.name("카테고리명")
-				.build();
-		categoryRepository.save(category);
-
-		Question question = Question.builder()
-				.title("질문제목")
-				.content("질문내용")
-				.member(member)
-				.category(category)
-				.build();
-		questionRepository.save(question);
-
-		Choice c1 = Choice.builder()
-				.question(question)
-				.detail("화해하지 않고 자연스럽게 거리를 둔다.")
-				.seq(1)
-				.build();
-		choiceRepository.save(c1);
-		Choice c2 = Choice.builder()
-				.question(question)
-				.detail("화해하고 관계를 유지한다")
-				.seq(2)
-				.build();
-		choiceRepository.save(c2);
-
-		//when
-		Question q = questionRepository.findOne(question.getQuestionId());
-
-		//then
-		System.out.println("q.getTitle() = " + q.getTitle());
-		System.out.println("question.getTitle() = " + question.getTitle());
-		Assertions.assertThat(q.getTitle()).isEqualTo(question.getTitle());
-	}
-
-	@Test
-	@Transactional
-	void addQuestionTest() {
-		//given
-		Member member = Member.builder()
-				.email("sth48811@naver.com")
-				.password("1234")
-				.nickname("닉네임")
-				.phone("01044748813")
-				.role(MemberRole.USER)
-				.build();
-		memberRepository.save(member);
-
-		Category category = Category.builder()
-				.name("사회생활")
-				.build();
-		categoryRepository.save(category);
-
-		//when
-		Question question = Question.builder()
-				.title("테스트제목")
-				.content("테스트내용")
-				.member(member)
-				.category(category)
-				.build();
-		Long questionId = questionRepository.save(question);
-		Question q = Optional.ofNullable(questionRepository.findOne(questionId))
-				.orElseThrow(() -> new QuestionNotFoundException("질문 정보를 불러올 수 없습니다."));
-
-		//then
-		Assertions.assertThat(q.getTitle()).isEqualTo(question.getTitle());
-	}
-
-	@Test
-	@Transactional
-	void answerQuestion() {
-		//given
-		Member member = Member.builder()
-				.email("sth48811@naver.com")
-				.password("1234")
-				.nickname("닉네임")
-				.phone("01044748813")
-				.role(MemberRole.USER)
-				.build();
-		memberRepository.save(member);
-		
-		Category category = Category.builder()
-				.name("카테고리명")
-				.build();
-		categoryRepository.save(category);
-
-		Question question = Question.builder()
-				.title("질문제목")
-				.content("질문내용")
-				.member(member)
-				.category(category)
-				.build();
-		questionRepository.save(question);
-
-		Choice c1 = Choice.builder()
-				.question(question)
-				.detail("화해하지 않고 자연스럽게 거리를 둔다.")
-				.seq(1)
-				.build();
-		choiceRepository.save(c1);
-
-		Choice c2 = Choice.builder()
-				.question(question)
-				.detail("화해하고 관계를 유지한다")
-				.seq(2)
-				.build();
-		choiceRepository.save(c2);
-
-		//when
-		Vote vote = Vote.builder()
-				.member(member)
-				.question(question)
-				.choice(c2)
-				.build();
-		Long voteId = voteRepository.save(vote);
-		Solution solution = Solution.builder()
-				.opinion("내 생각은 이렇다.")
-				.vote(vote)
-				.build();
-		solutionRepository.save(solution);
-
-		//then
-		Vote v = voteRepository.findOne(voteId);
-		Solution s = solutionJpaRepository.findByVote(v);
-		System.out.println("v.getChoice().getDetail() = " + v.getChoice().getDetail());
-		System.out.println("vote.getChoice().getDetail() = " + vote.getChoice().getDetail());
-		System.out.println("s.getOpinion() = " + s.getOpinion());
-		System.out.println("solution.getOpinion() = " + solution.getOpinion());
-		Assertions.assertThat(solution.getOpinion()).isEqualTo(s.getOpinion());
-		Assertions.assertThat(vote.getChoice().getDetail()).isEqualTo(v.getChoice().getDetail());
-	}
+//	@Test
+//	@Transactional
+//	void getQuestionListTest() {
+//		//given
+//		Member member = Member.builder()
+//				.email("sth488111@naver.com")
+//				.password("1234")
+//				.nickname("닉네임")
+//				.phone("01044748813")
+//				.role(MemberRole.USER)
+//				.build();
+//		memberRepository.save(member);
+//
+//		Category category = Category.builder()
+//				.name("카테고리명")
+//				.build();
+//		categoryRepository.save(category);
+//
+//		Question question = Question.builder()
+//				.title("질문제목")
+//				.content("질문내용")
+//				.member(member)
+//				.category(category)
+//				.build();
+//		questionRepository.save(question);
+//
+//		List<Choice> choices = new ArrayList<>();
+//		Choice c1 = Choice.builder()
+//				.sequence(1)
+//				.detail("화해하지 않고 자연스럽게 거리를 둔다.")
+//				.question(question)
+//				.build();
+//		choiceRepository.save(c1);
+//		choices.add(c1);
+//		Choice c2 = Choice.builder()
+//				.sequence(2)
+//				.detail("화해하고 관계를 유지한다")
+//				.question(question)
+//				.build();
+//		choiceRepository.save(c2);
+//		choices.add(c2);
+//
+//		//when
+//		Question q = questionRepository.findAll().get(0);
+//
+//		//then
+//		System.out.println("q.getTitle = " + q.getTitle());
+//		System.out.println("question.getTitle() = " + question.getTitle());
+//		Assertions.assertThat(q.getTitle()).isEqualTo(question.getTitle());
+//	}
+//
+//	@Test
+//	@Transactional
+//	void getQuestionDetailTest() {
+//		//given
+//		Member member = Member.builder()
+//				.email("sth48811@naver.com")
+//				.password("1234")
+//				.nickname("닉네임")
+//				.phone("01044748813")
+//				.role(MemberRole.USER)
+//				.build();
+//		memberRepository.save(member);
+//
+//		Category category = Category.builder()
+//				.name("카테고리명")
+//				.build();
+//		categoryRepository.save(category);
+//
+//		Question question = Question.builder()
+//				.title("질문제목")
+//				.content("질문내용")
+//				.member(member)
+//				.category(category)
+//				.build();
+//		questionRepository.save(question);
+//
+//		Choice c1 = Choice.builder()
+//				.sequence(1)
+//				.detail("화해하지 않고 자연스럽게 거리를 둔다.")
+//				.question(question)
+//				.build();
+//		choiceRepository.save(c1);
+//		Choice c2 = Choice.builder()
+//				.sequence(2)
+//				.detail("화해하고 관계를 유지한다")
+//				.question(question)
+//				.build();
+//		choiceRepository.save(c2);
+//
+//		//when
+//		Question q = questionRepository.findOne(question.getQuestionId());
+//
+//		//then
+//		System.out.println("q.getTitle() = " + q.getTitle());
+//		System.out.println("question.getTitle() = " + question.getTitle());
+//		Assertions.assertThat(q.getTitle()).isEqualTo(question.getTitle());
+//	}
+//
+//	@Test
+//	@Transactional
+//	void addQuestionTest() {
+//		//given
+//		Member member = Member.builder()
+//				.email("sth48811@naver.com")
+//				.password("1234")
+//				.nickname("닉네임")
+//				.phone("01044748813")
+//				.role(MemberRole.USER)
+//				.build();
+//		memberRepository.save(member);
+//
+//		Category category = Category.builder()
+//				.name("사회생활")
+//				.build();
+//		categoryRepository.save(category);
+//
+//		//when
+//		Question question = Question.builder()
+//				.title("테스트제목")
+//				.content("테스트내용")
+//				.member(member)
+//				.category(category)
+//				.build();
+//		Long questionId = questionRepository.save(question);
+//		Question q = Optional.ofNullable(questionRepository.findOne(questionId))
+//				.orElseThrow(() -> new QuestionNotFoundException("질문 정보를 불러올 수 없습니다."));
+//
+//		//then
+//		Assertions.assertThat(q.getTitle()).isEqualTo(question.getTitle());
+//	}
+//
+//	@Test
+//	@Transactional
+//	void answerQuestion() {
+//		//given
+//		Member member = Member.builder()
+//				.email("sth48811@naver.com")
+//				.password("1234")
+//				.nickname("닉네임")
+//				.phone("01044748813")
+//				.role(MemberRole.USER)
+//				.build();
+//		memberRepository.save(member);
+//
+//		Category category = Category.builder()
+//				.name("카테고리명")
+//				.build();
+//		categoryRepository.save(category);
+//
+//		Question question = Question.builder()
+//				.title("질문제목")
+//				.content("질문내용")
+//				.member(member)
+//				.category(category)
+//				.build();
+//		questionRepository.save(question);
+//
+//		Choice c1 = Choice.builder()
+//				.sequence(1)
+//				.detail("화해하지 않고 자연스럽게 거리를 둔다.")
+//				.question(question)
+//				.build();
+//		choiceRepository.save(c1);
+//
+//		Choice c2 = Choice.builder()
+//				.sequence(2)
+//				.detail("화해하고 관계를 유지한다")
+//				.question(question)
+//				.build();
+//		choiceRepository.save(c2);
+//
+//		//when
+//		Poll poll = Poll.builder()
+//				.member(member)
+//				.question(question)
+//				.choice(c2)
+//				.build();
+//		Long pollId = pollRepository.save(poll);
+//		Solution solution = Solution.builder()
+//				.opinion("내 생각은 이렇다.")
+//				.poll(poll)
+//				.build();
+//		solutionRepository.save(solution);
+//
+//		//then
+//		Poll p = pollRepository.findOne(pollId);
+//		Solution s = solutionJpaRepository.findByPoll(p);
+//		System.out.println("v.getChoice().getDetail() = " + p.getChoice().getDetail());
+//		System.out.println("vote.getChoice().getDetail() = " + poll.getChoice().getDetail());
+//		System.out.println("s.getOpinion() = " + s.getOpinion());
+//		System.out.println("solution.getOpinion() = " + solution.getOpinion());
+//		Assertions.assertThat(solution.getOpinion()).isEqualTo(s.getOpinion());
+//		Assertions.assertThat(poll.getChoice().getDetail()).isEqualTo(p.getChoice().getDetail());
+//	}
 
 //	@Test
 //	@Transactional

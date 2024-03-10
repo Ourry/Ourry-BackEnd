@@ -32,9 +32,10 @@ public enum ErrorCode {
     QUESTION_LOADING_FAILED("Q001", "질문 목록을 불러오지 못했습니다.", 400),
     QUESTION_NOT_FOUND("Q002", "질문을 찾을 수 없습니다.", 400),
     CHOICE_NOT_FOUND("Q003", "선택지 정보를 찾을 수 없습니다.", 400),
-    VOTE_NOT_FOUND("Q004", "투표 정보를 찾을 수 없습니다.", 400),
+    POLL_NOT_FOUND("Q004", "투표 정보를 찾을 수 없습니다.", 400),
     SOLUTION_NOT_FOUND("Q005", "투표에 대한 의견 정보를 찾을 수 없습니다.", 400),
     QUESTION_ALREADY_ANSWERED("Q006", "이미 답변을 완료한 질문입니다.", 400),
+    ANSWER_TO_ONESELF("Q007", "본인이 질문한 글에 의견을 제출했습니다.", 400),
 
     // 400
     BAD_REQUEST("400", "잘못된 요청입니다.", 400),
