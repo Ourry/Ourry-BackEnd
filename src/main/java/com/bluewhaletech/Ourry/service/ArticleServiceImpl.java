@@ -19,6 +19,7 @@ public class ArticleServiceImpl implements ArticleService {
     private final QuestionRepository questionRepository;
     private final CategoryRepository categoryRepository;
     private final ChoiceRepository choiceRepository;
+    private final ChoiceJpaRepository choiceJpaRepository;
     private final PollRepository pollRepository;
     private final PollJpaRepository pollJpaRepository;
     private final SolutionRepository solutionRepository;
@@ -26,11 +27,12 @@ public class ArticleServiceImpl implements ArticleService {
     private final ReplyJpaRepository replyJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
+    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyJpaRepository replyJpaRepository) {
         this.memberRepository = memberRepository;
         this.questionRepository = questionRepository;
         this.categoryRepository = categoryRepository;
         this.choiceRepository = choiceRepository;
+        this.choiceJpaRepository = choiceJpaRepository;
         this.pollRepository = pollRepository;
         this.pollJpaRepository = pollJpaRepository;
         this.solutionRepository = solutionRepository;
@@ -47,11 +49,13 @@ public class ArticleServiceImpl implements ArticleService {
             /* 질문별 투표 데이터 목록 */
             List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
                     .orElseThrow(() -> new PollNotFoundException("투표 데이터를 불러오는 과정에서 오류가 발생했습니다."));
+
             /* 질문별 솔루션 총합 */
             int solutionCnt = 0;
             for(Poll poll : polls) {
                 solutionCnt += solutionJpaRepository.countByPoll(poll);
             }
+
             /* 질문별 답글 총합 */
             int replyCnt = 0;
             for(Poll poll : polls) {
@@ -74,7 +78,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public QuestionDetailDTO getQuestionDetail(Long questionId) {
         Question question = Optional.ofNullable(questionRepository.findOne(questionId))
-                .orElseThrow(() -> new QuestionNotFoundException("질문 상세정보를 불러오는 과정에서 오류가 발생했습니다."));
+                .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
 
         /* 질문별 선택지 데이터 목록 */
         List<ChoiceDTO> choices = new ArrayList<>();
@@ -82,21 +86,14 @@ public class ArticleServiceImpl implements ArticleService {
             ChoiceDTO c = ChoiceDTO.builder()
                     .sequence(choice.getSequence())
                     .detail(choice.getDetail())
+                    .count(pollJpaRepository.countByQuestionAndChoice(question, choice))
                     .build();
             choices.add(c);
         }
 
         /* 질문별 투표 데이터 목록 */
         List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
-                .orElseThrow(() -> new PollNotFoundException("질문 데이터 목록을 불러와는 과정에서 오류가 발생했습니다."));
-        List<PollResultDTO> pollResults = new ArrayList<>();
-        for(Poll poll : polls) {
-            PollResultDTO pollResult = PollResultDTO.builder()
-                    .sequence(poll.getChoice().getSequence())
-                    .memberId(poll.getMember().getMemberId())
-                    .build();
-            pollResults.add(pollResult);
-        }
+                .orElseThrow(() -> new PollNotFoundException("투표 데이터가 존재하지 않습니다."));
 
         /* 투표별 솔루션 데이터 목록 */
         List<SolutionDTO> solutions = new ArrayList<>();
@@ -104,9 +101,10 @@ public class ArticleServiceImpl implements ArticleService {
             Solution solution = solutionJpaRepository.findByPoll(poll);
             if(Optional.ofNullable(solution).isPresent()) {
                 SolutionDTO s = SolutionDTO.builder()
+                        .memberId(poll.getMember().getMemberId())
+                        .nickname(poll.getMember().getNickname())
                         .sequence(poll.getChoice().getSequence())
                         .opinion(solution.getOpinion())
-                        .nickname(poll.getMember().getNickname())
                         .createdAt(poll.getCreatedAt())
                         .build();
                 solutions.add(s);
@@ -136,7 +134,6 @@ public class ArticleServiceImpl implements ArticleService {
                 .responseCnt(solutions.size()+replies.size())
                 .createdAt(question.getCreatedAt())
                 .choices(choices)
-                .pollResults(pollResults)
                 .solutions(solutions)
                 .replies(replies)
                 .build();
@@ -178,7 +175,7 @@ public class ArticleServiceImpl implements ArticleService {
         
         /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(dto.getQuestionId()))
-                .orElseThrow(() -> new QuestionNotFoundException("질문 정보를 불러올 수 없습니다."));
+                .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
 
         /* 자문자답여부 확인 */
         if(Objects.equals(dto.getMemberId(), question.getMember().getMemberId())) {
@@ -186,13 +183,16 @@ public class ArticleServiceImpl implements ArticleService {
         }
 
         /* 선택지 존재유무 확인 */
-        Choice choice = Optional.ofNullable(choiceRepository.findByQuestionAndSequence(question, dto.getSequence()))
-                .orElseThrow(() -> new ChoiceNotFoundException("선택지 정보를 불러올 수 없습니다."));
+        if(!choiceJpaRepository.existsByQuestionAndSequence(question, dto.getSequence())) {
+            throw new ChoiceNotFoundException("선택지 정보가 존재하지 않습니다.");
+        }
 
         /* 답변 작성유무 확인 */
-        if(Optional.ofNullable(pollRepository.findByMemberAndChoice(member, choice)).isPresent()) {
+        if(pollJpaRepository.existsByMemberAndQuestion(member, question)) {
             throw new QuestionAlreadyAnsweredException("해당 질문에 대해 답변한 기록이 존재합니다.");
         }
+
+        Choice choice = choiceRepository.findByQuestionAndSequence(question, dto.getSequence());
 
         Poll poll = Poll.builder()
                 .member(member)

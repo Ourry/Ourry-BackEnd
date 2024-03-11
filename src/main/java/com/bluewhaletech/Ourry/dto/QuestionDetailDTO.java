@@ -38,9 +38,6 @@ public class QuestionDetailDTO {
     private List<ChoiceDTO> choices;
 
     @NotBlank
-    private List<PollResultDTO> pollResults;
-
-    @NotBlank
     private List<SolutionDTO> solutions;
 
     @NotBlank

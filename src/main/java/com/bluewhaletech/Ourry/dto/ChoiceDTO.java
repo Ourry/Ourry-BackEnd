@@ -12,4 +12,7 @@ public class ChoiceDTO {
 
     @NotBlank
     private String detail;
+
+    @NotBlank
+    private int count;
 }

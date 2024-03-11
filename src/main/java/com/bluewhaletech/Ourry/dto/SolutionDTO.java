@@ -11,13 +11,16 @@ import java.time.LocalDateTime;
 @Builder
 public class SolutionDTO {
     @NotBlank
+    private Long memberId;
+
+    @NotBlank
+    private String nickname;
+
+    @NotBlank
     private int sequence;
 
     @NotBlank
     private String opinion;
-
-    @NotBlank
-    private String nickname;
 
     @NotBlank
     @JsonSetter("createdAt")
