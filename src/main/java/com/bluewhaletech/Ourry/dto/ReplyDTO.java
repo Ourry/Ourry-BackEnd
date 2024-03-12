@@ -19,4 +19,8 @@ public class ReplyDTO {
     @NotBlank
     @JsonSetter("createdAt")
     private LocalDateTime createdAt;
+
+    @NotBlank
+    @JsonSetter("solutionId")
+    private Long solutionId;
 }

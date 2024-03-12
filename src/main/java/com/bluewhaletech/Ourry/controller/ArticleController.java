@@ -2,6 +2,7 @@ package com.bluewhaletech.Ourry.controller;
 
 import com.bluewhaletech.Ourry.dto.QuestionRegistrationDTO;
 import com.bluewhaletech.Ourry.dto.QuestionResponseDTO;
+import com.bluewhaletech.Ourry.dto.ReplyRegistrationDTO;
 import com.bluewhaletech.Ourry.service.ArticleServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,12 @@ public class ArticleController {
     @PostMapping("/article/answerQuestion")
     public ResponseEntity<Object> answerQuestion(@RequestBody QuestionResponseDTO dto) {
         articleService.answerQuestion(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/article/addReply")
+    public ResponseEntity<Object> addReply(@RequestBody ReplyRegistrationDTO dto) {
+        articleService.addReply(dto);
         return ResponseEntity.ok().build();
     }
 }

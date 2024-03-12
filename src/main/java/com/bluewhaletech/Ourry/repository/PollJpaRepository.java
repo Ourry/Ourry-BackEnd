@@ -10,6 +10,8 @@ import java.util.List;
 
 @Repository
 public interface PollJpaRepository extends org.springframework.data.repository.Repository<Poll, Long> {
+    Poll findByPollId(Long pollId);
+
     List<Poll> findByQuestion(Question question);
 
     boolean existsByMemberAndQuestion(Member member, Question question);
