@@ -1,5 +1,6 @@
 package com.bluewhaletech.Ourry.dto;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,11 +20,14 @@ public class QuestionTotalDTO {
     private String nickname;
 
     @NotBlank
-    private int voteCnt;
+    @JsonSetter("pollCnt")
+    private int pollCnt;
 
     @NotBlank
+    @JsonSetter("responseCnt")
     private int responseCnt;
 
     @NotBlank
+    @JsonSetter("createdAt")
     private LocalDateTime createdAt;
 }

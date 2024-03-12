@@ -11,11 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reply extends BaseEntity {
     @Builder
-    public Reply(String comment, int seq, Member member, Vote vote) {
+    public Reply(String comment, Member member, Solution solution) {
         this.comment = comment;
-        this.seq = seq;
         this.member = member;
-        this.vote = vote;
+        this.solution = solution;
     }
 
     @Id
@@ -26,14 +25,11 @@ public class Reply extends BaseEntity {
     @Column(name = "comment", nullable = false)
     private String comment;
 
-    @Column(name = "seq", nullable = false)
-    private int seq;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
-    @JoinColumn(name = "vote_id", nullable = false)
-    private Vote vote;
+    @JoinColumn(name = "poll_poll_id", nullable = false)
+    private Solution solution;
 }

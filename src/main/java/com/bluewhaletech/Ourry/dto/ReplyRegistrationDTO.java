@@ -5,18 +5,17 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Builder
-public class VoteDTO {
+public class ReplyRegistrationDTO {
     @NotBlank
-    private String content;
+    private String comment;
 
     @NotBlank
-    private String nickname;
+    @JsonSetter("solutionId")
+    private Long solutionId;
 
     @NotBlank
-    @JsonSetter("createdAt")
-    private LocalDateTime createdAt;
+    @JsonSetter("memberId")
+    private Long memberId;
 }

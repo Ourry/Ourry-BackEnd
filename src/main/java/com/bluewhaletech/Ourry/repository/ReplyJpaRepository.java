@@ -1,12 +1,14 @@
 package com.bluewhaletech.Ourry.repository;
 
 import com.bluewhaletech.Ourry.domain.Reply;
-import com.bluewhaletech.Ourry.domain.Vote;
+import com.bluewhaletech.Ourry.domain.Solution;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface ReplyJpaRepository extends org.springframework.data.repository.Repository<Reply, Long> {
-    int countByVote(Vote vote);
+    int countBySolution(Solution solution);
 
-    Reply findByVote(Vote vote);
+    List<Reply> findBySolution(Solution solution);
 }

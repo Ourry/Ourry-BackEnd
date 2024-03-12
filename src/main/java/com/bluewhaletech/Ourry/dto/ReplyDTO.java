@@ -14,12 +14,13 @@ public class ReplyDTO {
     private String comment;
 
     @NotBlank
-    private int seq;
-
-    @NotBlank
     private String nickname;
 
     @NotBlank
     @JsonSetter("createdAt")
     private LocalDateTime createdAt;
+
+    @NotBlank
+    @JsonSetter("solutionId")
+    private Long solutionId;
 }

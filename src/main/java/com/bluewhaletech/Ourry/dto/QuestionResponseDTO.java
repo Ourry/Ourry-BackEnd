@@ -15,8 +15,7 @@ public class QuestionResponseDTO {
     private Long questionId;
 
     @NotBlank
-    @JsonSetter("choiceId")
-    private Long choiceId;
+    private int sequence;
 
     private String opinion;
 }
