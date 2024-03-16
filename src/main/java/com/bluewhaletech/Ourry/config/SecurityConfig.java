@@ -76,7 +76,8 @@ public class SecurityConfig {
                 .requestMatchers("/member/reissueToken").permitAll() // JWT 토큰 재발급 API
 
                 .requestMatchers("/article/getQuestionList").permitAll()
-                .requestMatchers("/article/getQuestionDetail/{questionId}").permitAll()
+                .requestMatchers("/article/getQuestionList/{categoryId}").permitAll()
+                .requestMatchers("/article/getQuestionDetail").permitAll()
                 .requestMatchers("/article/addQuestion").permitAll()
                 .requestMatchers("/article/answerQuestion").permitAll()
                 .requestMatchers("/article/addReply").permitAll()

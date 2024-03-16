@@ -9,7 +9,11 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class QuestionTotalDTO {
+public class QuestionListDTO {
+    @NotBlank
+    @JsonSetter("questionId")
+    private Long questionId;
+
     @NotBlank
     private String title;
 

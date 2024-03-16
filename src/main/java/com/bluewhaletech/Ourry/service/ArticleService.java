@@ -5,9 +5,11 @@ import com.bluewhaletech.Ourry.dto.*;
 import java.util.List;
 
 public interface ArticleService {
-    List<QuestionTotalDTO> getQuestionList();
+    List<QuestionListDTO> getQuestionList();
 
-    QuestionDetailDTO getQuestionDetail(Long questionId);
+    List<QuestionListDTO> getQuestionList(Long categoryId);
+
+    QuestionDetailDTO getQuestionDetail(Long memberId, Long questionId);
 
     void addQuestion(QuestionRegistrationDTO dto);
 

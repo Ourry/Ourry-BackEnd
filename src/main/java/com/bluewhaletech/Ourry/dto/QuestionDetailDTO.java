@@ -24,6 +24,9 @@ public class QuestionDetailDTO {
     private String nickname;
 
     @NotBlank
+    private char polled;
+
+    @NotBlank
     @JsonSetter("pollCnt")
     private int pollCnt;
 
