@@ -77,7 +77,7 @@ public class SecurityConfig {
 
                 .requestMatchers("/article/getQuestionList").permitAll()
                 .requestMatchers("/article/getQuestionList/{categoryId}").permitAll()
-                .requestMatchers("/article/getQuestionDetail/{questionId}").permitAll()
+                .requestMatchers("/article/getQuestionDetail").permitAll()
                 .requestMatchers("/article/addQuestion").permitAll()
                 .requestMatchers("/article/answerQuestion").permitAll()
                 .requestMatchers("/article/addReply").permitAll()

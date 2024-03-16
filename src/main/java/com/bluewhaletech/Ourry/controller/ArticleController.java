@@ -7,10 +7,7 @@ import com.bluewhaletech.Ourry.service.ArticleServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class ArticleController {
@@ -31,9 +28,9 @@ public class ArticleController {
         return ResponseEntity.ok().body(articleService.getQuestionList(categoryId));
     }
 
-    @GetMapping("/article/getQuestionDetail/{questionId}")
-    public ResponseEntity<Object> getQuestionDetail(@PathVariable Long questionId) {
-        return ResponseEntity.ok().body(articleService.getQuestionDetail(questionId));
+    @GetMapping("/article/getQuestionDetail")
+    public ResponseEntity<Object> getQuestionDetail(@RequestParam(value = "memberId") Long memberId, @RequestParam(value = "questionId") Long questionId) {
+        return ResponseEntity.ok().body(articleService.getQuestionDetail(memberId, questionId));
     }
 
     @PostMapping("/article/addQuestion")

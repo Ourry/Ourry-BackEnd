@@ -9,7 +9,7 @@ public interface ArticleService {
 
     List<QuestionListDTO> getQuestionList(Long categoryId);
 
-    QuestionDetailDTO getQuestionDetail(Long questionId);
+    QuestionDetailDTO getQuestionDetail(Long memberId, Long questionId);
 
     void addQuestion(QuestionRegistrationDTO dto);
 

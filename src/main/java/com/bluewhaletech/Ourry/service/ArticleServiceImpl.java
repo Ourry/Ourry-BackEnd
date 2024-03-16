@@ -61,9 +61,20 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public QuestionDetailDTO getQuestionDetail(Long questionId) {
+    public QuestionDetailDTO getQuestionDetail(Long memberId, Long questionId) {
+        /* 회원 존재유무 확인 */
+        Member member = Optional.ofNullable(memberRepository.findOne(memberId))
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+
+        /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(questionId))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
+
+        /* 회원 투표유무 확인 */
+        char polled = 'A'; // 작성자(A)
+        if(!questionJpaRepository.existsByMemberAndQuestionId(member, questionId)) {
+            polled = pollJpaRepository.existsByMemberAndQuestion(member, question) ? 'Y' : 'N'; // 투표(Y), 미투표(N)
+        }
 
         /* 질문별 선택지 데이터 목록 */
         List<ChoiceDTO> choices = new ArrayList<>();
@@ -121,6 +132,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .content(question.getContent())
                 .category(question.getCategory().getName())
                 .nickname(question.getMember().getNickname())
+                .polled(polled)
                 .pollCnt(polls.size())
                 .responseCnt(solutions.size()+replies.size())
                 .createdAt(question.getCreatedAt())
