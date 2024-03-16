@@ -8,7 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface SolutionJpaRepository extends org.springframework.data.repository.Repository<Solution, Long> {
     boolean existsByPoll(Poll poll);
 
-    int countByPoll(Poll poll);
-
     Solution findByPoll(Poll poll);
 }

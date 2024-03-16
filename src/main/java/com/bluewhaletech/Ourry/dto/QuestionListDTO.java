@@ -11,6 +11,10 @@ import java.time.LocalDateTime;
 @Builder
 public class QuestionListDTO {
     @NotBlank
+    @JsonSetter("questionId")
+    private Long questionId;
+
+    @NotBlank
     private String title;
 
     @NotBlank

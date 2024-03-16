@@ -86,6 +86,7 @@ public class ArticleServiceImpl implements ArticleService {
             Solution solution = solutionJpaRepository.findByPoll(poll);
             if(Optional.ofNullable(solution).isPresent()) {
                 SolutionDTO s = SolutionDTO.builder()
+                        .solutionId(solution.getPoll().getPollId())
                         .sequence(poll.getChoice().getSequence())
                         .opinion(solution.getOpinion())
                         .createdAt(poll.getCreatedAt())
@@ -245,6 +246,7 @@ public class ArticleServiceImpl implements ArticleService {
             }
 
             QuestionListDTO dto = QuestionListDTO.builder()
+                    .questionId(question.getQuestionId())
                     .title(question.getTitle())
                     .content(question.getContent())
                     .nickname(question.getMember().getNickname())

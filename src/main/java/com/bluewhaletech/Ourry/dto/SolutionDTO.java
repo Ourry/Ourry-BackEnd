@@ -11,6 +11,10 @@ import java.time.LocalDateTime;
 @Builder
 public class SolutionDTO {
     @NotBlank
+    @JsonSetter("solutionId")
+    private Long solutionId;
+
+    @NotBlank
     private int sequence;
 
     @NotBlank
@@ -25,5 +29,4 @@ public class SolutionDTO {
 
     @NotBlank
     private String nickname;
-
 }
