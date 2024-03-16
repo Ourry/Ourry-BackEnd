@@ -17,6 +17,7 @@ import java.util.Optional;
 public class ArticleServiceImpl implements ArticleService {
     private final MemberRepository memberRepository;
     private final QuestionRepository questionRepository;
+    private final QuestionJpaRepository questionJpaRepository;
     private final CategoryRepository categoryRepository;
     private final ChoiceRepository choiceRepository;
     private final ChoiceJpaRepository choiceJpaRepository;
@@ -28,9 +29,10 @@ public class ArticleServiceImpl implements ArticleService {
     private final ReplyJpaRepository replyJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository) {
+    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository) {
         this.memberRepository = memberRepository;
         this.questionRepository = questionRepository;
+        this.questionJpaRepository = questionJpaRepository;
         this.categoryRepository = categoryRepository;
         this.choiceRepository = choiceRepository;
         this.choiceJpaRepository = choiceJpaRepository;
@@ -43,37 +45,19 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<QuestionTotalDTO> getQuestionList() {
-        List<QuestionTotalDTO> list = new ArrayList<>();
+    public List<QuestionListDTO> getQuestionList() {
         List<Question> questions = Optional.ofNullable(questionRepository.findAll())
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
-        for(Question question : questions) {
-            /* 질문별 투표 데이터 목록 */
-            List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
-                    .orElseThrow(() -> new PollNotFoundException("투표 데이터를 불러오는 과정에서 오류가 발생했습니다."));
+        return bringQuestionList(questions);
+    }
 
-            /* 질문별 솔루션 총합 & 솔루션별 답글 총합 */
-            int replyCnt = 0;
-            int solutionCnt = 0;
-            for(Poll poll : polls) {
-                if(solutionJpaRepository.existsByPoll(poll)) {
-                    Solution solution = solutionJpaRepository.findByPoll(poll);
-                    replyCnt += replyJpaRepository.countBySolution(solution);
-                    solutionCnt++;
-                }
-            }
-
-            QuestionTotalDTO dto = QuestionTotalDTO.builder()
-                    .title(question.getTitle())
-                    .content(question.getContent())
-                    .nickname(question.getMember().getNickname())
-                    .createdAt(question.getCreatedAt())
-                    .pollCnt(polls.size())
-                    .responseCnt(solutionCnt+replyCnt)
-                    .build();
-            list.add(dto);
-        }
-        return list;
+    @Override
+    public List<QuestionListDTO> getQuestionList(Long categoryId) {
+        Category category = Optional.ofNullable(categoryRepository.findOne(categoryId))
+                .orElseThrow(() -> new CategoryNotFoundException("카테고리 정보가 존재하지 않습니다."));
+        List<Question> questions = Optional.ofNullable(questionJpaRepository.findByCategory(category))
+                .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
+        return bringQuestionList(questions);
     }
 
     @Override
@@ -240,5 +224,36 @@ public class ArticleServiceImpl implements ArticleService {
                 .member(member)
                 .build();
         replyRepository.save(reply);
+    }
+
+    private List<QuestionListDTO> bringQuestionList(List<Question> questions) {
+        List<QuestionListDTO> list = new ArrayList<>();
+        for(Question question : questions) {
+            /* 질문별 투표 데이터 목록 */
+            List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
+                    .orElseThrow(() -> new PollNotFoundException("투표 데이터를 불러오는 과정에서 오류가 발생했습니다."));
+
+            /* 질문별 솔루션 총합 & 솔루션별 답글 총합 */
+            int replyCnt = 0;
+            int solutionCnt = 0;
+            for(Poll poll : polls) {
+                if(solutionJpaRepository.existsByPoll(poll)) {
+                    Solution solution = solutionJpaRepository.findByPoll(poll);
+                    replyCnt += replyJpaRepository.countBySolution(solution);
+                    solutionCnt++;
+                }
+            }
+
+            QuestionListDTO dto = QuestionListDTO.builder()
+                    .title(question.getTitle())
+                    .content(question.getContent())
+                    .nickname(question.getMember().getNickname())
+                    .createdAt(question.getCreatedAt())
+                    .pollCnt(polls.size())
+                    .responseCnt(solutionCnt+replyCnt)
+                    .build();
+            list.add(dto);
+        }
+        return list;
     }
 }

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class QuestionTotalDTO {
+public class QuestionListDTO {
     @NotBlank
     private String title;
 
