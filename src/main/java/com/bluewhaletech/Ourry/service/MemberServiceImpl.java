@@ -11,6 +11,8 @@ import com.bluewhaletech.Ourry.repository.MemberRepository;
 import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
 import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
+import io.jsonwebtoken.MalformedJwtException;
+import io.netty.util.internal.StringUtil;
 import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Optional;
@@ -94,7 +97,10 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public JwtDTO reissueToken(String refreshToken) {
+    public JwtDTO reissueToken(String token) {
+        /* Refresh Token 인입여부 및 유효성 확인 */
+        String refreshToken = resolveRefreshToken(token);
+
         /* Redis 내부에 Refresh Token 존재하는지 확인 */
         Long tokenId = tokenProvider.getTokenId(refreshToken);
         RefreshToken storedRefreshToken = redisJwtRepository.findById(tokenId)
@@ -218,6 +224,15 @@ public class MemberServiceImpl implements MemberService {
                 .expiration(token.getRefreshTokenExpiration())
                 .build());
         return token;
+    }
+
+    private String resolveRefreshToken(String refreshToken) {
+        if(!StringUtils.hasText(refreshToken)) {
+            throw new EmptyJwtException("Refresh Token 정보가 인입되지 않았습니다.");
+        } else if(!refreshToken.startsWith("Bearer")) {
+            throw new MalformedJwtException("유효하지 않은 JWT 토큰입니다.");
+        }
+        return refreshToken.substring(7);
     }
 
     private String createRandomCode() {

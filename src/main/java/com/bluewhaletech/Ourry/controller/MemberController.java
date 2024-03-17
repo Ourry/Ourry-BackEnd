@@ -59,8 +59,7 @@ public class MemberController {
      */
     @PostMapping("/member/reissueToken")
     public ResponseEntity<Object> reissueToken(HttpServletRequest request, HttpServletResponse response) {
-        String token = request.getHeader(REFRESH_HEADER);
-        JwtDTO newJwt = memberService.reissueToken(token.substring(7));
+        JwtDTO newJwt = memberService.reissueToken(request.getHeader(REFRESH_HEADER));
         tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
         tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
         return ResponseEntity.ok().build();
