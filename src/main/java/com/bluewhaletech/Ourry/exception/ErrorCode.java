@@ -22,7 +22,8 @@ public enum ErrorCode {
     JWT_UNSUPPORTED("A004", "지원되지 않는 JWT 토큰입니다.", 401), // 지원되지 않는 JWT
     BAD_CREDENTIALS("A005", "자격 증명에 실패했습니다. 아이디 또는 비밀번호를 다시 확인해주세요.", 401), // ID 또는 PW 불일치
     ILLEGAL_ARGUMENT("A006", "올바르지 않은 JWT 토큰 형식입니다.", 401), // JWT Claims 정보 없음
-    NOT_LOGGED_IN("A007", "로그인 정보가 존재하지 않습니다.", 401), // 로그인 정보 없음
+    ALREADY_LOGGED_OUT("A007", "이미 로그아웃이 완료된 토큰입니다.", 401), // 로그아웃이 완료된 토큰
+    NOT_LOGGED_IN("A008", "로그인 정보가 존재하지 않습니다.", 401), // 로그인 정보 없음
     JWT_NOT_FOUND("A008", "JWT 토큰 정보가 존재하지 않습니다.", 401), // 존재하지 않는 Refresh Token
     JWT_MISMATCH("A009", "JWT 인증 정보가 일치하지 않습니다.", 401), // Refresh Token 값 불일치
 
