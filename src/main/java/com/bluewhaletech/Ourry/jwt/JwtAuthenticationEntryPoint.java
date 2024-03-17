@@ -21,6 +21,8 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             String exception = attribute.toString();
             if(exception.isEmpty()) {
                 setErrorResponse(response, ErrorCode.NOT_LOGGED_IN);
+            } else if(exception.equals(ErrorCode.EMPTY_JWT.getCode())) {
+                setErrorResponse(response, ErrorCode.EMPTY_JWT);
             } else if(exception.equals(ErrorCode.JWT_MALFORMED.getCode())) {
                 setErrorResponse(response, ErrorCode.JWT_MALFORMED);
             } else if(exception.equals(ErrorCode.JWT_EXPIRED.getCode())) {

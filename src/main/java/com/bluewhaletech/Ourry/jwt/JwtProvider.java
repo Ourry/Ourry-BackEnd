@@ -122,15 +122,6 @@ public class JwtProvider {
         return expiredDate.after(new Date());
     }
 
-    /* JWT 토큰 값 추출 */
-    public String resolveToken(HttpServletRequest request, String header) {
-        String bearerToken = request.getHeader(header);
-        if(StringUtils.hasText(bearerToken) && bearerToken.startsWith(TOKEN_TYPE)) {
-            return bearerToken.substring(7);
-        }
-        return null;
-    }
-
     /* Token 전송을 위한 Response Header 설정 */
     public void setResponseHeader(HttpServletResponse response, String header, String token) {
         response.setHeader(header, TOKEN_TYPE+" "+token);

@@ -47,7 +47,6 @@ public class MemberController {
     @PostMapping("/member/memberLogin")
     public ResponseEntity<Object> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
         JwtDTO newJwt = memberService.memberLogin(dto);
-        /* Response Header 안에 Access Token & Refresh Token 생성 */
         tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
         tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
         return ResponseEntity.ok().build();
@@ -60,9 +59,8 @@ public class MemberController {
      */
     @PostMapping("/member/reissueToken")
     public ResponseEntity<Object> reissueToken(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = tokenProvider.resolveToken(request, REFRESH_HEADER);
-        JwtDTO newJwt = memberService.reissueToken(refreshToken);
-        /* Response Header 안에 새로운 Access Token & Refresh Token 갱신 */
+        String token = request.getHeader(REFRESH_HEADER);
+        JwtDTO newJwt = memberService.reissueToken(token.substring(7));
         tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
         tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
         return ResponseEntity.ok().build();
@@ -75,8 +73,8 @@ public class MemberController {
      */
     @PostMapping("/member/memberLogout")
     public ResponseEntity<Object> memberLogout(HttpServletRequest request) {
-        String accessToken = tokenProvider.resolveToken(request, AUTHORIZATION_HEADER);
-        memberService.memberLogout(accessToken);
+        String token = request.getHeader(AUTHORIZATION_HEADER);
+        memberService.memberLogout(token.substring(7));
         return ResponseEntity.ok().build();
     }
 
