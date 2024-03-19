@@ -5,6 +5,8 @@ import com.bluewhaletech.Ourry.dto.*;
 import java.util.List;
 
 public interface ArticleService {
+    List<QuestionListDTO> searchQuestionList(String searchKeyword);
+
     List<QuestionListDTO> getQuestionList();
 
     List<QuestionListDTO> getQuestionList(Long categoryId);
