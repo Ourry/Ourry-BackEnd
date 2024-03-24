@@ -1,9 +1,9 @@
 package com.bluewhaletech.Ourry.jwt;
 
+import com.bluewhaletech.Ourry.exception.AlreadyLoggedOutException;
 import com.bluewhaletech.Ourry.exception.ErrorCode;
 import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterChain;
@@ -22,8 +22,6 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-
     private final JwtProvider tokenProvider;
     private final RedisBlackListManagement redisBlackListManagement;
 
@@ -36,8 +34,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
-            String accessToken = tokenProvider.resolveToken(request, AUTHORIZATION_HEADER);
-            if(StringUtils.hasText(accessToken) && tokenProvider.validateAccessToken(accessToken) && doNotLogout(accessToken)) {
+            /* Access Token 인입여부 및 유효성 확인 */
+            String token = request.getHeader("Authorization");
+            if(!StringUtils.hasText(token)) {
+                request.setAttribute("exception", ErrorCode.EMPTY_JWT.getCode());
+                return;
+            } else if(!token.startsWith("Bearer")) {
+                request.setAttribute("exception", ErrorCode.JWT_MALFORMED.getCode());
+                return;
+            }
+
+            /* Access Token 검증 */
+            String accessToken = token.substring(7);
+            if(tokenProvider.validateAccessToken(accessToken) && doNotLogout(accessToken)) {
                 /* 인증(Authentication) 정보를 가져와서 SecurityContext 내부에 저장 */
                 Authentication authentication = tokenProvider.getAuthentication(accessToken);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -50,14 +59,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             request.setAttribute("exception", ErrorCode.BAD_CREDENTIALS.getCode());
         } catch(UnsupportedJwtException e) {
             request.setAttribute("exception", ErrorCode.JWT_UNSUPPORTED.getCode());
+        } finally {
+            filterChain.doFilter(request, response);
         }
-        filterChain.doFilter(request, response);
     }
 
     private boolean doNotLogout(String accessToken) {
         String status = redisBlackListManagement.checkLogout(accessToken);
         if(status != null && status.equals("LOGOUT")) {
-            throw new JwtException("로그아웃이 완료된 토큰입니다.");
+            throw new AlreadyLoggedOutException("이미 로그아웃이 완료된 토큰입니다.");
         }
         return true;
     }

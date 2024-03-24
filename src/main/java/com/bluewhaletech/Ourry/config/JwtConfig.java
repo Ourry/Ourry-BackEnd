@@ -1,6 +1,6 @@
 package com.bluewhaletech.Ourry.config;
 
-import com.bluewhaletech.Ourry.jwt.JwtProperties;
+import com.bluewhaletech.Ourry.properties.JwtProperties;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

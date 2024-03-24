@@ -18,6 +18,11 @@ public class ArticleController {
         this.articleService = articleService;
     }
 
+    @GetMapping("/article/searchQuestionList")
+    public ResponseEntity<Object> searchQuestionList(@RequestParam String searchKeyword) {
+        return ResponseEntity.ok().body(articleService.searchQuestionList(searchKeyword));
+    }
+
     @GetMapping("/article/getQuestionList")
     public ResponseEntity<Object> getQuestionList() {
         return ResponseEntity.ok().body(articleService.getQuestionList());

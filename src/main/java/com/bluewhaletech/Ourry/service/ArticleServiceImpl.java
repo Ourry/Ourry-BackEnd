@@ -45,6 +45,13 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    public List<QuestionListDTO> searchQuestionList(String searchKeyword) {
+        List<Question> questions = Optional.ofNullable(questionJpaRepository.searchQuestionList(searchKeyword))
+                .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
+        return bringQuestionList(questions);
+    }
+
+    @Override
     public List<QuestionListDTO> getQuestionList() {
         List<Question> questions = Optional.ofNullable(questionRepository.findAll())
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));

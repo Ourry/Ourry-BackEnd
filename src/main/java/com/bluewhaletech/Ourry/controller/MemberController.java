@@ -1,7 +1,6 @@
 package com.bluewhaletech.Ourry.controller;
 
 import com.bluewhaletech.Ourry.dto.*;
-import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,15 +15,10 @@ import java.io.UnsupportedEncodingException;
 
 @Controller
 public class MemberController {
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String REFRESH_HEADER = "Refresh";
-
-    private final JwtProvider tokenProvider;
     private final MemberServiceImpl memberService;
 
     @Autowired
-    public MemberController(JwtProvider tokenProvider, MemberServiceImpl memberService) {
-        this.tokenProvider = tokenProvider;
+    public MemberController(MemberServiceImpl memberService) {
         this.memberService = memberService;
     }
 
@@ -47,9 +41,8 @@ public class MemberController {
     @PostMapping("/member/memberLogin")
     public ResponseEntity<Object> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
         JwtDTO newJwt = memberService.memberLogin(dto);
-        /* Response Header 안에 Access Token & Refresh Token 생성 */
-        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
-        tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
+        response.setHeader("Authorization", "Bearer " + newJwt.getAccessToken());
+        response.setHeader("Refresh", "Bearer " + newJwt.getRefreshToken());
         return ResponseEntity.ok().build();
     }
 
@@ -60,11 +53,9 @@ public class MemberController {
      */
     @PostMapping("/member/reissueToken")
     public ResponseEntity<Object> reissueToken(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = tokenProvider.resolveToken(request, REFRESH_HEADER);
-        JwtDTO newJwt = memberService.reissueToken(refreshToken);
-        /* Response Header 안에 새로운 Access Token & Refresh Token 갱신 */
-        tokenProvider.setResponseHeader(response, AUTHORIZATION_HEADER, newJwt.getAccessToken());
-        tokenProvider.setResponseHeader(response, REFRESH_HEADER, newJwt.getRefreshToken());
+        JwtDTO newJwt = memberService.reissueToken(request.getHeader("Refresh"));
+        response.setHeader("Authorization", "Bearer " + newJwt.getAccessToken());
+        response.setHeader("Refresh", "Bearer " + newJwt.getRefreshToken());
         return ResponseEntity.ok().build();
     }
 
@@ -75,8 +66,8 @@ public class MemberController {
      */
     @PostMapping("/member/memberLogout")
     public ResponseEntity<Object> memberLogout(HttpServletRequest request) {
-        String accessToken = tokenProvider.resolveToken(request, AUTHORIZATION_HEADER);
-        memberService.memberLogout(accessToken);
+        String token = request.getHeader("Authorization");
+        memberService.memberLogout(token.substring(7));
         return ResponseEntity.ok().build();
     }
 

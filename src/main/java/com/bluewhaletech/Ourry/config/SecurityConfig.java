@@ -75,6 +75,7 @@ public class SecurityConfig {
                 .requestMatchers("/member/passwordReset").permitAll() // 비밀번호 재설정 API
                 .requestMatchers("/member/reissueToken").permitAll() // JWT 토큰 재발급 API
 
+                .requestMatchers("/article/searchQuestionList").permitAll()
                 .requestMatchers("/article/getQuestionList").permitAll()
                 .requestMatchers("/article/getQuestionList/{categoryId}").permitAll()
                 .requestMatchers("/article/getQuestionDetail").permitAll()
