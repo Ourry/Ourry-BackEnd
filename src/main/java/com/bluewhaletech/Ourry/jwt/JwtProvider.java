@@ -7,9 +7,6 @@ import com.bluewhaletech.Ourry.security.CustomUser;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
 import java.util.Arrays;
@@ -25,22 +21,18 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Component
 public class JwtProvider {
-    private final SecretKey secretKey;
-    private final Long accessTokenExpiration;
-    private final Long refreshTokenExpiration;
-
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String TOKEN_TYPE = "Bearer";
+    private final SecretKey SECRET_KEY;
+    private final Long ACCESS_TOKEN_EXPIRATION;
+    private final Long REFRESH_TOKEN_EXPIRATION;
 
     @Autowired
     public JwtProvider(@Value("${jwt.secret}") String secret, @Value("${jwt.atk}") Long accessTokenExpiration, @Value("${jwt.rtk}") Long refreshTokenExpiration) {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
-        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
-        this.accessTokenExpiration = accessTokenExpiration;
-        this.refreshTokenExpiration = refreshTokenExpiration;
+        this.SECRET_KEY = Keys.hmacShaKeyFor(keyBytes);
+        this.ACCESS_TOKEN_EXPIRATION = accessTokenExpiration;
+        this.REFRESH_TOKEN_EXPIRATION = refreshTokenExpiration;
     }
 
     public JwtDTO createToken(AuthenticationDTO dto) {
@@ -55,32 +47,32 @@ public class JwtProvider {
         /* Access Token 생성 */
         String accessToken = Jwts.builder()
                 .subject(dto.getTokenName())
-                .claim(AUTHORIZATION_HEADER, authorities)
+                .claim("Authorization", authorities)
                 .issuedAt(new Date(now))
-                .expiration(new Date(now + accessTokenExpiration))
-                .signWith(secretKey, Jwts.SIG.HS256)
+                .expiration(new Date(now + ACCESS_TOKEN_EXPIRATION))
+                .signWith(SECRET_KEY, Jwts.SIG.HS256)
                 .compact();
 
         /* Refresh Token 생성 */
         String refreshToken = Jwts.builder()
                 .subject(String.valueOf(dto.getTokenId()))
                 .issuedAt(new Date(now))
-                .expiration(new Date(now + refreshTokenExpiration))
-                .signWith(secretKey, Jwts.SIG.HS256)
+                .expiration(new Date(now + REFRESH_TOKEN_EXPIRATION))
+                .signWith(SECRET_KEY, Jwts.SIG.HS256)
                 .compact();
 
         return JwtDTO.builder()
-                .tokenType(TOKEN_TYPE)
+                .tokenType("Bearer")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .accessTokenExpiration(accessTokenExpiration)
-                .refreshTokenExpiration(refreshTokenExpiration)
+                .accessTokenExpiration(ACCESS_TOKEN_EXPIRATION)
+                .refreshTokenExpiration(REFRESH_TOKEN_EXPIRATION)
                 .build();
     }
 
     private Jws<Claims> getClaims(String token) {
         return Jwts.parser()
-                .verifyWith(secretKey)
+                .verifyWith(SECRET_KEY)
                 .build()
                 .parseSignedClaims(token);
     }
@@ -101,13 +93,13 @@ public class JwtProvider {
     /* Access Token 복호화를 통한 인증(Authentication) 정보 가져오기 */
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token).getPayload();
-        if(claims.get(AUTHORIZATION_HEADER) == null) {
+        if(claims.get("Authorization") == null) {
             throw new AuthorizationNotFoundException("권한 정보가 존재하지 않는 토큰입니다");
         }
 
         /* 권한(Authority) 정보 가져오기 */
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORIZATION_HEADER).toString().split(","))
+                Arrays.stream(claims.get("Authorization").toString().split(","))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
@@ -120,10 +112,5 @@ public class JwtProvider {
     public boolean validateAccessToken(String token) {
         Date expiredDate = getClaims(token).getPayload().getExpiration();
         return expiredDate.after(new Date());
-    }
-
-    /* Token 전송을 위한 Response Header 설정 */
-    public void setResponseHeader(HttpServletResponse response, String header, String token) {
-        response.setHeader(header, TOKEN_TYPE+" "+token);
     }
 }

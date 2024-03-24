@@ -22,9 +22,6 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String TOKEN_TYPE = "Bearer";
-
     private final JwtProvider tokenProvider;
     private final RedisBlackListManagement redisBlackListManagement;
 
@@ -38,11 +35,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             /* Access Token 인입여부 및 유효성 확인 */
-            String token = request.getHeader(AUTHORIZATION_HEADER);
+            String token = request.getHeader("Authorization");
             if(!StringUtils.hasText(token)) {
                 request.setAttribute("exception", ErrorCode.EMPTY_JWT.getCode());
                 return;
-            } else if(!token.startsWith(TOKEN_TYPE)) {
+            } else if(!token.startsWith("Bearer")) {
                 request.setAttribute("exception", ErrorCode.JWT_MALFORMED.getCode());
                 return;
             }

@@ -47,3 +47,6 @@ gen
 # application.yml
 application-local.yml
 application-secret.yml
+
+# firebase-secret-key.json
+/src/main/resources/firebase/secret-key.json
