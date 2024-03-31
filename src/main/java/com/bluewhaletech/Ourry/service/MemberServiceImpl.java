@@ -199,6 +199,12 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
+    public void addFcmToken(String accessToken, String fcmToken) {
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(tokenProvider.getTokenSubject(accessToken)))
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+        member.setFcmToken(fcmToken);
+    }
+    @Transactional
     public void updateProfile(MemberDTO dto) {
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));

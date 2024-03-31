@@ -104,6 +104,14 @@ public class MemberController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/member/addFcmToken")
+    public ResponseEntity<Object> addFcmToken(HttpServletRequest request) {
+        String accessToken = request.getHeader("Authorization");
+        String fcmToken = request.getHeader("FirebaseCloudMessaging");
+        memberService.addFcmToken(accessToken, fcmToken);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/member/updateProfile")
     public ResponseEntity<Object> updateProfile(@RequestBody MemberDTO dto) {
         memberService.updateProfile(dto);
