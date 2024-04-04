@@ -4,6 +4,7 @@ import com.bluewhaletech.Ourry.domain.*;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.exception.*;
 import com.bluewhaletech.Ourry.repository.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,9 +28,10 @@ public class ArticleServiceImpl implements ArticleService {
     private final SolutionJpaRepository solutionJpaRepository;
     private final ReplyRepository replyRepository;
     private final ReplyJpaRepository replyJpaRepository;
+    private final MemberJpaRepository memberJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository) {
+    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, MemberJpaRepository memberJpaRepository) {
         this.memberRepository = memberRepository;
         this.questionRepository = questionRepository;
         this.questionJpaRepository = questionJpaRepository;
@@ -42,6 +44,7 @@ public class ArticleServiceImpl implements ArticleService {
         this.solutionJpaRepository = solutionJpaRepository;
         this.replyRepository = replyRepository;
         this.replyJpaRepository = replyJpaRepository;
+        this.memberJpaRepository = memberJpaRepository;
     }
 
     @Override
@@ -68,9 +71,9 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public QuestionDetailDTO getQuestionDetail(Long memberId, Long questionId) {
+    public QuestionDetailDTO getQuestionDetail(String email, Long questionId) {
         /* 회원 존재유무 확인 */
-        Member member = Optional.ofNullable(memberRepository.findOne(memberId))
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
         /* 질문 존재유무 확인 */
@@ -151,9 +154,9 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public void addQuestion(QuestionRegistrationDTO dto) {
+    public void addQuestion(String email, QuestionRegistrationDTO dto) {
         /* 회원 존재유무 확인 */
-        Member member = Optional.ofNullable(memberRepository.findOne(dto.getMemberId()))
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
         /* 카테고리 존재유무 확인 */
@@ -180,9 +183,9 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public void answerQuestion(QuestionResponseDTO dto) {
+    public void answerQuestion(String email, QuestionResponseDTO dto) {
         /* 회원 존재유무 확인 */
-        Member member = Optional.ofNullable(memberRepository.findOne(dto.getMemberId()))
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
         
         /* 질문 존재유무 확인 */
@@ -190,7 +193,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
 
         /* 자문자답여부 확인 */
-        if(Objects.equals(dto.getMemberId(), question.getMember().getMemberId())) {
+        if(email.equals(question.getMember().getEmail())) {
             throw new AnswerToOneselfException("본인이 질문한 글에는 의견을 제출할 수 없습니다.");
         }
 
@@ -225,9 +228,9 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public void addReply(ReplyRegistrationDTO dto) {
+    public void addReply(String email, ReplyRegistrationDTO dto) {
         /* 회원 존재유무 확인 */
-        Member member = Optional.ofNullable(memberRepository.findOne(dto.getMemberId()))
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("답글을 작성한 회원 정보가 존재하지 않습니다."));
 
         /* 투표 정보 확인 */

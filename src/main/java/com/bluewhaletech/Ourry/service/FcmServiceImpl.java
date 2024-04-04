@@ -94,6 +94,7 @@ public class FcmServiceImpl implements FcmService {
                 .build();
         return objectMapper.writeValueAsString(fcm);
     }
+
     private String getAccessToken() throws IOException {
         GoogleCredentials googleCredentials = GoogleCredentials
                 .fromStream(new ClassPathResource(secretKey).getInputStream())

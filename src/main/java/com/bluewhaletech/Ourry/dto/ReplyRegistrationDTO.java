@@ -14,8 +14,4 @@ public class ReplyRegistrationDTO {
     @NotBlank
     @JsonSetter("solutionId")
     private Long solutionId;
-
-    @NotBlank
-    @JsonSetter("memberId")
-    private Long memberId;
 }
