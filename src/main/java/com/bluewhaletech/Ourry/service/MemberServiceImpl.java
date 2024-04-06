@@ -204,6 +204,7 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
         member.setFcmToken(fcmToken);
     }
+
     @Transactional
     public void updateProfile(MemberDTO dto) {
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))

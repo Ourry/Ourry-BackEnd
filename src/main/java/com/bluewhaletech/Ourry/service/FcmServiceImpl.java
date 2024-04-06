@@ -52,8 +52,17 @@ public class FcmServiceImpl implements FcmService {
         }
     }
 
-    @Transactional
-    public void sendMessage(FcmRequestDTO dto) throws IOException {
+    public void sendMessageByList() {
+
+    }
+
+    public void sendMessage(String targetToken, String title, String body) throws IOException {
+        FcmRequestDTO dto = FcmRequestDTO.builder()
+                .targetToken(targetToken)
+                .title(title)
+                .body(body)
+                .build();
+
         HttpURLConnection conn = null;
         try {
             URL url = new URL(apiUrl);
@@ -79,20 +88,20 @@ public class FcmServiceImpl implements FcmService {
         }
     }
 
-    private String makeMessage(FcmRequestDTO dto) throws JsonProcessingException {
+    private String makeMessage(FcmRequestDTO request) throws JsonProcessingException {
         Notification notification = Notification.builder()
-                .setTitle(dto.getTitle())
-                .setBody(dto.getBody())
+                .setTitle(request.getTitle())
+                .setBody(request.getBody())
                 .build();
         Message message = Message.builder()
                 .setNotification(notification)
-                .setToken(dto.getTargetToken())
+                .setToken(request.getTargetToken())
                 .build();
-        FcmMessageDTO fcm = FcmMessageDTO.builder()
+        FcmMessageDTO dto = FcmMessageDTO.builder()
                 .validateOnly(false)
                 .message(message)
                 .build();
-        return objectMapper.writeValueAsString(fcm);
+        return objectMapper.writeValueAsString(dto);
     }
 
     private String getAccessToken() throws IOException {

@@ -4,19 +4,20 @@ import com.bluewhaletech.Ourry.domain.*;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.exception.*;
 import com.bluewhaletech.Ourry.repository.*;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class ArticleServiceImpl implements ArticleService {
-    private final MemberRepository memberRepository;
+    private final FcmServiceImpl fcmService;
     private final QuestionRepository questionRepository;
     private final QuestionJpaRepository questionJpaRepository;
     private final CategoryRepository categoryRepository;
@@ -31,8 +32,8 @@ public class ArticleServiceImpl implements ArticleService {
     private final MemberJpaRepository memberJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(MemberRepository memberRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, MemberJpaRepository memberJpaRepository) {
-        this.memberRepository = memberRepository;
+    public ArticleServiceImpl(FcmServiceImpl fcmService, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, MemberJpaRepository memberJpaRepository) {
+        this.fcmService = fcmService;
         this.questionRepository = questionRepository;
         this.questionJpaRepository = questionJpaRepository;
         this.categoryRepository = categoryRepository;
@@ -207,8 +208,10 @@ public class ArticleServiceImpl implements ArticleService {
             throw new QuestionAlreadyAnsweredException("해당 질문에 대해 답변한 기록이 존재합니다.");
         }
 
-        Choice choice = choiceRepository.findByQuestionAndSequence(question, dto.getSequence());
-
+        /* 질문 정보와 응답자가 선택한 시퀀스로 선택지 정보 가져오기 */
+        Choice choice = Optional.ofNullable(choiceRepository.findByQuestionAndSequence(question, dto.getSequence()))
+                .orElseThrow(() -> new ChoiceNotFoundException("선택지 정보를 불러오는 과정에서 오류가 발생했습니다."));
+        /* 투표 정보 생성 및 저장 */
         Poll poll = Poll.builder()
                 .member(member)
                 .question(question)
@@ -216,6 +219,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .build();
         pollRepository.save(poll);
 
+        /* 의견을 제출했다면 솔루션 정보 생성 및 저장 */
         String opinion = dto.getOpinion();
         if(opinion != null) {
             Solution solution = Solution.builder()
@@ -223,6 +227,17 @@ public class ArticleServiceImpl implements ArticleService {
                     .poll(poll)
                     .build();
             solutionRepository.save(solution);
+        }
+
+        /* FCM */
+        try {
+            /* 질문 작성자에게 알림 전송하기 위해 FcmToken 가져오기 */
+            String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(question.getMember().getMemberId()))
+                    .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
+            /* FCM 서비스를 통한 알림 전송 */
+            fcmService.sendMessage(fcmToken, "FCM토큰제목", "FCM토큰내용");
+        } catch (Exception e) {
+            log.error("FCM Service Error: {}", e.getMessage());
         }
     }
 
@@ -241,6 +256,7 @@ public class ArticleServiceImpl implements ArticleService {
         Solution solution = Optional.ofNullable(solutionJpaRepository.findByPoll(poll))
                 .orElseThrow(() -> new SolutionNotFoundException("답글을 작성한 솔루션에 대한 정보가 존재하지 않습니다."));
 
+        /* 답글 정보 저장 */
         Reply reply = Reply.builder()
                 .comment(dto.getComment())
                 .solution(solution)
