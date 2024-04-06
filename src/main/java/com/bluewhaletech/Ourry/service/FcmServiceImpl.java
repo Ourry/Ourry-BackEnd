@@ -52,10 +52,6 @@ public class FcmServiceImpl implements FcmService {
         }
     }
 
-    public void sendMessageByList() {
-
-    }
-
     public void sendMessage(String targetToken, String title, String body) throws IOException {
         FcmRequestDTO dto = FcmRequestDTO.builder()
                 .targetToken(targetToken)

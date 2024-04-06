@@ -33,7 +33,7 @@ public enum ErrorCode {
 
     // 게시물
     QUESTION_LOADING_FAILED("Q001", "질문 목록을 불러오지 못했습니다.", 400),
-    QUESTION_NOT_FOUND("Q002", "질문을 찾을 수 없습니다.", 400),
+    QUESTION_NOT_FOUND("Q002", "질문 정보를 찾을 수 없습니다.", 400),
     CHOICE_NOT_FOUND("Q003", "선택지 정보를 찾을 수 없습니다.", 400),
     POLL_NOT_FOUND("Q004", "투표 정보를 찾을 수 없습니다.", 400),
     SOLUTION_NOT_FOUND("Q005", "투표에 대한 의견 정보를 찾을 수 없습니다.", 400),

@@ -218,26 +218,26 @@ public class ArticleServiceImpl implements ArticleService {
                 .choice(choice)
                 .build();
         pollRepository.save(poll);
-
-        /* 의견을 제출했다면 솔루션 정보 생성 및 저장 */
+        
         String opinion = dto.getOpinion();
         if(opinion != null) {
-            Solution solution = Solution.builder()
-                    .opinion(opinion)
-                    .poll(poll)
-                    .build();
-            solutionRepository.save(solution);
-        }
+            try {
+                /* 의견을 제출했다면 솔루션 정보 생성 및 저장 */
+                Solution solution = Solution.builder()
+                        .opinion(opinion)
+                        .poll(poll)
+                        .build();
+                solutionRepository.save(solution);
 
-        /* FCM */
-        try {
-            /* 질문 작성자에게 알림 전송하기 위해 FcmToken 가져오기 */
-            String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(question.getMember().getMemberId()))
-                    .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
-            /* FCM 서비스를 통한 알림 전송 */
-            fcmService.sendMessage(fcmToken, "FCM토큰제목", "FCM토큰내용");
-        } catch (Exception e) {
-            log.error("FCM Service Error: {}", e.getMessage());
+                /* 질문 작성자에게 발급된 FcmToken 가져오기 */
+                Long memberId = question.getMember().getMemberId();
+                String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(memberId))
+                        .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
+                /* 질문 작성자에게 FCM 알림 전송 */
+                fcmService.sendMessage(fcmToken, "새로운 의견이 등록됐습니다.", opinion);
+            } catch (Exception e) {
+                log.error("FCM Service Error: {}", e.getMessage());
+            }
         }
     }
 
@@ -254,15 +254,46 @@ public class ArticleServiceImpl implements ArticleService {
 
         /* 솔루션 존재유무 확인 */
         Solution solution = Optional.ofNullable(solutionJpaRepository.findByPoll(poll))
-                .orElseThrow(() -> new SolutionNotFoundException("답글을 작성한 솔루션에 대한 정보가 존재하지 않습니다."));
+                .orElseThrow(() -> new SolutionNotFoundException("답글을 작성한 솔루션 정보가 존재하지 않습니다."));
 
-        /* 답글 정보 저장 */
-        Reply reply = Reply.builder()
+        /* FCM */
+        try {
+            List<String> list = new ArrayList<>();
+
+            /* 질문자에게 발급된 FCM 토큰 가져오기 */
+            Long questionAuthorMemberId = poll.getQuestion().getMember().getMemberId();
+            String questionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(questionAuthorMemberId))
+                    .orElseThrow(() -> new FcmTokenNotFoundException("질문 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+            list.add(questionAuthorFcmToken);
+
+            /* 솔루션 작성자에게 발급된 FCM 토큰 가져오기 */
+            Long solutionAuthorMemberId = poll.getMember().getMemberId();
+            String solutionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(solutionAuthorMemberId))
+                    .orElseThrow(() -> new FcmTokenNotFoundException("솔루션 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+            list.add(solutionAuthorFcmToken);
+
+            /* 솔루션에 답글을 작성한 회원들로부터 FCM 토큰 가져오기 */
+            for(Reply reply : replyJpaRepository.findBySolution(solution)) {
+                Long replyAuthorMemberId = reply.getMember().getMemberId();
+                String replyAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(replyAuthorMemberId))
+                        .orElseThrow(() -> new FcmTokenNotFoundException("답글 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+                list.add(replyAuthorFcmToken);
+            }
+
+            /* 리스트에 담긴 토큰별로 FCM 알림 전송 */
+            for(String fcmToken : list) {
+                fcmService.sendMessage(fcmToken, "새로운 답글이 등록됐습니다.", dto.getComment());
+            }
+        } catch (Exception e) {
+            log.error("FCM Service Error: {}", e.getMessage());
+        }
+
+        /* 알림이 전송된 이후에 답글 정보 저장 */
+        replyRepository.save(Reply.builder()
                 .comment(dto.getComment())
                 .solution(solution)
                 .member(member)
-                .build();
-        replyRepository.save(reply);
+                .build());
     }
 
     private List<QuestionListDTO> bringQuestionList(List<Question> questions) {
