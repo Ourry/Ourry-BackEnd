@@ -127,6 +127,7 @@ public class ArticleServiceImpl implements ArticleService {
                 for(Reply reply : replyJpaRepository.findBySolution(solution)) {
                     if(Optional.ofNullable(reply).isPresent()) {
                         ReplyDTO r = ReplyDTO.builder()
+                                .sequence(reply.getSolution().getPoll().getChoice().getSequence())
                                 .comment(reply.getComment())
                                 .nickname(reply.getMember().getNickname())
                                 .createdAt(reply.getCreatedAt())
