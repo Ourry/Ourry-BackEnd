@@ -14,6 +14,7 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND("M004", "회원 정보를 찾을 수 없습니다.", 400), // 등록되지 않은 회원
     EMAIL_AUTHENTICATION_NOT_COMPLETED("M005", "이메일 인증이 완료되지 않았습니다.", 400), // 이메일 인증 미완료
     EMAIL_AUTHENTICATION_CODE_MISMATCH("M006", "이메일 인증코드가 일치하지 않습니다. 다시 확인해주세요.", 400), // 이메일 인증코드 불일치
+    FCM_TOKEN_NOT_FOUND("M007", "FCM 토큰을 불러올 수 없습니다.", 400),
 
     // 인증
     EMPTY_JWT("A001", "JWT 토큰이 인입되지 않았습니다.", 401), // Access Token 없는 요청
@@ -32,7 +33,7 @@ public enum ErrorCode {
 
     // 게시물
     QUESTION_LOADING_FAILED("Q001", "질문 목록을 불러오지 못했습니다.", 400),
-    QUESTION_NOT_FOUND("Q002", "질문을 찾을 수 없습니다.", 400),
+    QUESTION_NOT_FOUND("Q002", "질문 정보를 찾을 수 없습니다.", 400),
     CHOICE_NOT_FOUND("Q003", "선택지 정보를 찾을 수 없습니다.", 400),
     POLL_NOT_FOUND("Q004", "투표 정보를 찾을 수 없습니다.", 400),
     SOLUTION_NOT_FOUND("Q005", "투표에 대한 의견 정보를 찾을 수 없습니다.", 400),

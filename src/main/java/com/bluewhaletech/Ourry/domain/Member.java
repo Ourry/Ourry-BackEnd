@@ -11,13 +11,14 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseEntity {
     @Builder
-    protected Member(Long memberId, String email, String password, String nickname, String phone, MemberRole role) {
+    protected Member(Long memberId, String email, String password, String nickname, String phone, MemberRole role,  String fcmToken) {
         this.memberId = memberId;
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.phone = phone;
         this.role = role;
+        this.fcmToken = fcmToken;
     }
 
     @Id
@@ -41,4 +42,8 @@ public class Member extends BaseEntity {
     @Column(name = "role", nullable = false)
     @Enumerated(EnumType.STRING)
     private MemberRole role;
+
+    @Setter
+    @Column(name = "fcm_token", nullable = false)
+    private String fcmToken;
 }

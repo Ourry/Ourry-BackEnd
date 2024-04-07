@@ -66,8 +66,8 @@ public class MemberController {
      */
     @PostMapping("/member/memberLogout")
     public ResponseEntity<Object> memberLogout(HttpServletRequest request) {
-        String token = request.getHeader("Authorization");
-        memberService.memberLogout(token.substring(7));
+        String accessToken = request.getHeader("Authorization").substring(7);
+        memberService.memberLogout(accessToken);
         return ResponseEntity.ok().build();
     }
 
@@ -101,6 +101,14 @@ public class MemberController {
     @PostMapping("/member/passwordReset")
     public ResponseEntity<Object> passwordReset(@RequestBody PasswordResetDTO dto) {
         memberService.passwordReset(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/member/addFcmToken")
+    public ResponseEntity<Object> addFcmToken(HttpServletRequest request) {
+        String accessToken = request.getHeader("Authorization").substring(7);
+        String fcmToken = request.getHeader("FirebaseCloudMessaging");
+        memberService.addFcmToken(accessToken, fcmToken);
         return ResponseEntity.ok().build();
     }
 

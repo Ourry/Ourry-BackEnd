@@ -7,10 +7,6 @@ import lombok.Getter;
 @Getter
 public class QuestionResponseDTO {
     @NotBlank
-    @JsonSetter("memberId")
-    private Long memberId;
-
-    @NotBlank
     @JsonSetter("questionId")
     private Long questionId;
 

@@ -15,10 +15,6 @@ public class QuestionRegistrationDTO {
     private String content;
 
     @NotBlank
-    @JsonSetter("memberId")
-    private Long memberId;
-
-    @NotBlank
     @JsonSetter("categoryId")
     private Long categoryId;
 

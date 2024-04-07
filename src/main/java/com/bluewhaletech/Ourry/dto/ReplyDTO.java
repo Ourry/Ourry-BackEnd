@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 @Builder
 public class ReplyDTO {
     @NotBlank
+    private int sequence;
+
+    @NotBlank
     private String comment;
 
     @NotBlank

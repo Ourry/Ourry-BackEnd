@@ -11,11 +11,11 @@ public interface ArticleService {
 
     List<QuestionListDTO> getQuestionList(Long categoryId);
 
-    QuestionDetailDTO getQuestionDetail(Long memberId, Long questionId);
+    QuestionDetailDTO getQuestionDetail(String email, Long questionId);
 
-    void addQuestion(QuestionRegistrationDTO dto);
+    void addQuestion(String email, QuestionRegistrationDTO dto);
 
-    void answerQuestion(QuestionResponseDTO dto);
+    void answerQuestion(String email, QuestionResponseDTO dto);
 
-    void addReply(ReplyRegistrationDTO dto);
+    void addReply(String email, ReplyRegistrationDTO dto);
 }

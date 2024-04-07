@@ -78,10 +78,10 @@ public class SecurityConfig {
                 .requestMatchers("/article/searchQuestionList").permitAll()
                 .requestMatchers("/article/getQuestionList").permitAll()
                 .requestMatchers("/article/getQuestionList/{categoryId}").permitAll()
-                .requestMatchers("/article/getQuestionDetail").permitAll()
-                .requestMatchers("/article/addQuestion").permitAll()
-                .requestMatchers("/article/answerQuestion").permitAll()
-                .requestMatchers("/article/addReply").permitAll()
+//                .requestMatchers("/article/getQuestionDetail").permitAll()
+//                .requestMatchers("/article/addQuestion").permitAll()
+//                .requestMatchers("/article/answerQuestion").permitAll()
+//                .requestMatchers("/article/addReply").permitAll()
                 .anyRequest().authenticated() // 위 URL 목록을 제외한 나머지 요청에 대해 인증 수행
         );
         return http.build();
