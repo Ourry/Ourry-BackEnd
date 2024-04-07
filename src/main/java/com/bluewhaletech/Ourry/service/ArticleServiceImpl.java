@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -222,18 +221,18 @@ public class ArticleServiceImpl implements ArticleService {
         
         String opinion = dto.getOpinion();
         if(opinion != null) {
-            try {
-                /* 의견을 제출했다면 솔루션 정보 생성 및 저장 */
-                Solution solution = Solution.builder()
-                        .opinion(opinion)
-                        .poll(poll)
-                        .build();
-                solutionRepository.save(solution);
+            /* 의견을 제출했다면 솔루션 정보 생성 및 저장 */
+            Solution solution = Solution.builder()
+                    .opinion(opinion)
+                    .poll(poll)
+                    .build();
+            solutionRepository.save(solution);
 
-                /* 질문 작성자에게 발급된 FcmToken 가져오기 */
-                Long memberId = question.getMember().getMemberId();
-                String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(memberId))
-                        .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
+            /* 질문 작성자에게 발급된 FcmToken 가져오기 */
+            String questionAuthorEmail = question.getMember().getEmail();
+            String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
+                    .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
+            try {
                 /* 질문 작성자에게 FCM 알림 전송 */
                 fcmService.sendMessage(fcmToken, "새로운 의견이 등록됐습니다.", opinion);
             } catch (Exception e) {
@@ -257,30 +256,31 @@ public class ArticleServiceImpl implements ArticleService {
         Solution solution = Optional.ofNullable(solutionJpaRepository.findByPoll(poll))
                 .orElseThrow(() -> new SolutionNotFoundException("답글을 작성한 솔루션 정보가 존재하지 않습니다."));
 
+        /* FCM 토큰 목록 */
+        List<String> list = new ArrayList<>();
+
+        /* 질문자에게 발급된 FCM 토큰 가져오기 */
+        String questionAuthorEmail = poll.getQuestion().getMember().getEmail();
+        String questionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
+                .orElseThrow(() -> new FcmTokenNotFoundException("질문 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+        list.add(questionAuthorFcmToken);
+
+        /* 솔루션 작성자에게 발급된 FCM 토큰 가져오기 */
+        String solutionAuthorEmail = poll.getMember().getEmail();
+        String solutionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(solutionAuthorEmail))
+                .orElseThrow(() -> new FcmTokenNotFoundException("솔루션 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+        list.add(solutionAuthorFcmToken);
+
+        /* 솔루션에 답글을 작성한 회원들로부터 FCM 토큰 가져오기 */
+        for(Reply reply : replyJpaRepository.findBySolution(solution)) {
+            String replyAuthorEmail = reply.getMember().getEmail();
+            String replyAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(replyAuthorEmail))
+                    .orElseThrow(() -> new FcmTokenNotFoundException("답글 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+            list.add(replyAuthorFcmToken);
+        }
+
         /* FCM */
         try {
-            List<String> list = new ArrayList<>();
-
-            /* 질문자에게 발급된 FCM 토큰 가져오기 */
-            Long questionAuthorMemberId = poll.getQuestion().getMember().getMemberId();
-            String questionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(questionAuthorMemberId))
-                    .orElseThrow(() -> new FcmTokenNotFoundException("질문 작성자에게 FCM 토큰이 발급되지 않았습니다."));
-            list.add(questionAuthorFcmToken);
-
-            /* 솔루션 작성자에게 발급된 FCM 토큰 가져오기 */
-            Long solutionAuthorMemberId = poll.getMember().getMemberId();
-            String solutionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(solutionAuthorMemberId))
-                    .orElseThrow(() -> new FcmTokenNotFoundException("솔루션 작성자에게 FCM 토큰이 발급되지 않았습니다."));
-            list.add(solutionAuthorFcmToken);
-
-            /* 솔루션에 답글을 작성한 회원들로부터 FCM 토큰 가져오기 */
-            for(Reply reply : replyJpaRepository.findBySolution(solution)) {
-                Long replyAuthorMemberId = reply.getMember().getMemberId();
-                String replyAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByMemberId(replyAuthorMemberId))
-                        .orElseThrow(() -> new FcmTokenNotFoundException("답글 작성자에게 FCM 토큰이 발급되지 않았습니다."));
-                list.add(replyAuthorFcmToken);
-            }
-
             /* 리스트에 담긴 토큰별로 FCM 알림 전송 */
             for(String fcmToken : list) {
                 fcmService.sendMessage(fcmToken, "새로운 답글이 등록됐습니다.", dto.getComment());
