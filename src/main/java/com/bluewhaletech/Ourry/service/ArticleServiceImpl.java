@@ -232,6 +232,8 @@ public class ArticleServiceImpl implements ArticleService {
             String questionAuthorEmail = question.getMember().getEmail();
             String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
                     .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
+
+            /* FCM */
             try {
                 /* 질문 작성자에게 FCM 알림 전송 */
                 fcmService.sendMessage(fcmToken, "새로운 의견이 등록됐습니다.", opinion);

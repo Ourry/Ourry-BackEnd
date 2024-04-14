@@ -44,7 +44,8 @@ out/
 out
 gen
 
-# application.yml
+# Properties
+application.yml
 application-local.yml
 application-secret.yml
 

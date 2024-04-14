@@ -27,15 +27,14 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class FcmServiceImpl implements FcmService {
-    @Value("${fcm.secretKey}")
-    private String secretKey;
-    @Value("${fcm.apiUrl}")
-    private String apiUrl;
-
+    private final String apiUrl;
+    private final String secretKey;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public FcmServiceImpl(ObjectMapper objectMapper) {
+    public FcmServiceImpl(@Value("${fcm.apiUrl}") String apiUrl, @Value("${fcm.secretKey}") String secretKey, ObjectMapper objectMapper) {
+        this.apiUrl = apiUrl;
+        this.secretKey = secretKey;
         this.objectMapper = objectMapper;
     }
 
@@ -66,8 +65,8 @@ public class FcmServiceImpl implements FcmService {
             conn.setRequestProperty("Content-Type", "application/json; UTF-8");
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
-        } catch (Exception e) {
-            log.error(e.getMessage());
+        } catch (IOException e) {
+            log.error("FCM Service Connection Exception : " + e.getMessage());
         }
 
         DataOutputStream dataOutputStream = null;
@@ -77,7 +76,7 @@ public class FcmServiceImpl implements FcmService {
             dataOutputStream.writeBytes(makeMessage(dto));
             dataOutputStream.flush();
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("FCM Service Request Exception : " + e.getMessage());
         } finally {
             if(dataOutputStream != null) dataOutputStream.close();
         }
@@ -100,10 +99,15 @@ public class FcmServiceImpl implements FcmService {
     }
 
     private String getAccessToken() throws IOException {
-        GoogleCredentials googleCredentials = GoogleCredentials
-                .fromStream(new ClassPathResource(secretKey).getInputStream())
-                .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-        googleCredentials.refreshAccessToken();
-        return googleCredentials.getAccessToken().getTokenValue();
+        try {
+            GoogleCredentials googleCredentials = GoogleCredentials
+                    .fromStream(new ClassPathResource(secretKey).getInputStream())
+                    .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
+            googleCredentials.refreshIfExpired();
+            return googleCredentials.getAccessToken().getTokenValue();
+        } catch (IOException e) {
+            log.error("Firebase Access-Token Request Exception : " + e.getMessage());
+            throw new IOException();
+        }
     }
 }

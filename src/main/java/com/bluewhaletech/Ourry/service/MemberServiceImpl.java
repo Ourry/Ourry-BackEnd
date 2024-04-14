@@ -12,7 +12,6 @@ import com.bluewhaletech.Ourry.repository.RedisJwtRepository;
 import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
 import io.jsonwebtoken.MalformedJwtException;
-import io.netty.util.internal.StringUtil;
 import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +54,12 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public void createAccount(MemberRegistrationDTO dto) {
+    public void createAccount(MemberRegistrationDTO dto, String fcmToken) {
+        /* FCM 토큰 포함여부 확인 */
+        if(fcmToken == null || fcmToken.isEmpty()) {
+            throw new FcmTokenNotFoundException("FCM 토큰이 존재하지 않습니다.");
+        }
+
         /* 이메일 중복 확인 */
         Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .ifPresent(member -> {
@@ -74,6 +78,7 @@ public class MemberServiceImpl implements MemberService {
                 .nickname(dto.getNickname())
                 .phone(dto.getPhone())
                 .role(MemberRole.USER)
+                .fcmToken(fcmToken)
                 .build();
         memberRepository.save(member);
 

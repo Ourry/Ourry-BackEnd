@@ -7,12 +7,12 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding;
 @Getter
 @ConfigurationProperties(prefix = "fcm")
 public class FcmProperties {
-    private final String secretKey;
     private final String apiUrl;
+    private final String secretKey;
 
     @ConstructorBinding
-    public FcmProperties(String secretKey, String apiUrl) {
-        this.secretKey = secretKey;
+    public FcmProperties(String apiUrl, String secretKey) {
         this.apiUrl = apiUrl;
+        this.secretKey = secretKey;
     }
 }

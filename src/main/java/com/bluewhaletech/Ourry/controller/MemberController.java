@@ -28,8 +28,9 @@ public class MemberController {
      * @return memberId (회원 엔티티 PK)
      */
     @PostMapping("/member/createAccount")
-    public ResponseEntity<Object> createAccount(@RequestBody MemberRegistrationDTO dto) {
-        memberService.createAccount(dto);
+    public ResponseEntity<Object> createAccount(HttpServletRequest request, @RequestBody MemberRegistrationDTO dto) {
+        String fcmToken = request.getHeader("FirebaseCloudMessaging");
+        memberService.createAccount(dto, fcmToken);
         return ResponseEntity.ok().build();
     }
 
