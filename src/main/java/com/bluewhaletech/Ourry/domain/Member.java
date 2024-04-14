@@ -44,6 +44,6 @@ public class Member extends BaseEntity {
     private MemberRole role;
 
     @Setter
-    @Column(name = "fcm_token")
+    @Column(name = "fcm_token", nullable = false)
     private String fcmToken;
 }

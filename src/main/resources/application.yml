@@ -10,9 +10,5 @@ spring:
     generate-ddl: true
     hibernate:
       ddl-auto: create
-  data:
-    redis:
-      host: "localhost"
-      port: 6379
   profiles:
     active: local
