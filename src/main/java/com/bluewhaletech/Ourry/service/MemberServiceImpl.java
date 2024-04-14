@@ -55,6 +55,11 @@ public class MemberServiceImpl implements MemberService {
 
     @Transactional
     public void createAccount(MemberRegistrationDTO dto, String fcmToken) {
+        /* FCM 토큰 포함여부 확인 */
+        if(fcmToken == null || fcmToken.isEmpty()) {
+            throw new FcmTokenNotFoundException("FCM 토큰이 존재하지 않습니다.");
+        }
+
         /* 이메일 중복 확인 */
         Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .ifPresent(member -> {
