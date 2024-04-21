@@ -39,6 +39,7 @@ public enum ErrorCode {
     SOLUTION_NOT_FOUND("Q005", "투표에 대한 의견 정보를 찾을 수 없습니다.", 400),
     QUESTION_ALREADY_ANSWERED("Q006", "이미 답변을 완료한 질문입니다.", 400),
     ANSWER_TO_ONESELF("Q007", "본인이 질문한 글에 의견을 제출했습니다.", 400),
+    ALARM_SETTING_NOT_FOUND("Q008", "질문에 대한 알림 설정 기록이 존재하지 않습니다.", 400),
 
     // 400
     BAD_REQUEST("400", "잘못된 요청입니다.", 400),

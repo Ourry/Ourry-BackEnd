@@ -17,6 +17,7 @@ import java.util.Optional;
 @Service
 public class ArticleServiceImpl implements ArticleService {
     private final FcmServiceImpl fcmService;
+    private final MemberJpaRepository memberJpaRepository;
     private final QuestionRepository questionRepository;
     private final QuestionJpaRepository questionJpaRepository;
     private final CategoryRepository categoryRepository;
@@ -28,11 +29,13 @@ public class ArticleServiceImpl implements ArticleService {
     private final SolutionJpaRepository solutionJpaRepository;
     private final ReplyRepository replyRepository;
     private final ReplyJpaRepository replyJpaRepository;
-    private final MemberJpaRepository memberJpaRepository;
+    private final AlarmRepository alarmRepository;
+    private final AlarmJpaRepository alarmJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(FcmServiceImpl fcmService, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, MemberJpaRepository memberJpaRepository) {
+    public ArticleServiceImpl(FcmServiceImpl fcmService, MemberJpaRepository memberJpaRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, AlarmRepository alarmRepository, AlarmJpaRepository alarmJpaRepository) {
         this.fcmService = fcmService;
+        this.memberJpaRepository = memberJpaRepository;
         this.questionRepository = questionRepository;
         this.questionJpaRepository = questionJpaRepository;
         this.categoryRepository = categoryRepository;
@@ -44,7 +47,8 @@ public class ArticleServiceImpl implements ArticleService {
         this.solutionJpaRepository = solutionJpaRepository;
         this.replyRepository = replyRepository;
         this.replyJpaRepository = replyJpaRepository;
-        this.memberJpaRepository = memberJpaRepository;
+        this.alarmRepository = alarmRepository;
+        this.alarmJpaRepository = alarmJpaRepository;
     }
 
     @Override
@@ -79,6 +83,10 @@ public class ArticleServiceImpl implements ArticleService {
         /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(questionId))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
+
+        /* 알림 수신여부 가져오기 */
+        Alarm alarm = Optional.ofNullable(alarmJpaRepository.findByMemberAndQuestion(member, question))
+                .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대한 알림 설정 기록이 존재하지 않습니다."));
 
         /* 회원 투표유무 확인 */
         char polled = 'A'; // 작성자(A)
@@ -143,6 +151,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .content(question.getContent())
                 .category(question.getCategory().getName())
                 .nickname(question.getMember().getNickname())
+                .alarmYN(alarm.getAlarmYN())
                 .polled(polled)
                 .pollCnt(polls.size())
                 .responseCnt(solutions.size()+replies.size())
@@ -180,6 +189,13 @@ public class ArticleServiceImpl implements ArticleService {
                     .build();
             choiceRepository.save(choice);
         }
+
+        /* 알림 수신여부(Y) 등록 */
+        alarmRepository.save(Alarm.builder()
+                .member(member)
+                .question(question)
+                .alarmYN("Y")
+                .build());
     }
 
     @Override
@@ -221,25 +237,33 @@ public class ArticleServiceImpl implements ArticleService {
         
         String opinion = dto.getOpinion();
         if(opinion != null) {
-            /* 의견을 제출했다면 솔루션 정보 생성 및 저장 */
-            Solution solution = Solution.builder()
-                    .opinion(opinion)
-                    .poll(poll)
-                    .build();
-            solutionRepository.save(solution);
-
-            /* 질문 작성자에게 발급된 FcmToken 가져오기 */
-            String questionAuthorEmail = question.getMember().getEmail();
-            String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
-                    .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
-
             /* FCM */
             try {
-                /* 질문 작성자에게 FCM 알림 전송 */
-                fcmService.sendMessage(fcmToken, "새로운 의견이 등록됐습니다.", opinion);
+                /* 의견을 제출했다면 솔루션 정보 생성 및 저장 */
+                solutionRepository.save(Solution.builder()
+                        .opinion(opinion)
+                        .poll(poll)
+                        .build());
+
+                /* 질문에 대한 알림 수신여부 검사 */
+                if("Y".equals(alarmJpaRepository.findAlarmYNByMemberAndQuestion(question.getMember(), question))) {
+                    /* 질문 작성자에게 발급된 FcmToken 가져오기 */
+                    String questionAuthorEmail = question.getMember().getEmail();
+                    String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
+                            .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
+                    /* 질문 작성자에게 FCM 알림 전송 */
+                    fcmService.sendMessage(fcmToken, "새로운 의견이 등록됐습니다.", opinion);
+                }
             } catch (Exception e) {
                 log.error("FCM Service Error: {}", e.getMessage());
             }
+
+            /* 알림 수신여부(Y) 등록 */
+            alarmRepository.save(Alarm.builder()
+                    .member(member)
+                    .question(question)
+                    .alarmYN("Y")
+                    .build());
         }
     }
 
@@ -267,18 +291,33 @@ public class ArticleServiceImpl implements ArticleService {
                 .orElseThrow(() -> new FcmTokenNotFoundException("질문 작성자에게 FCM 토큰이 발급되지 않았습니다."));
         list.add(questionAuthorFcmToken);
 
-        /* 솔루션 작성자에게 발급된 FCM 토큰 가져오기 */
-        String solutionAuthorEmail = poll.getMember().getEmail();
-        String solutionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(solutionAuthorEmail))
-                .orElseThrow(() -> new FcmTokenNotFoundException("솔루션 작성자에게 FCM 토큰이 발급되지 않았습니다."));
-        list.add(solutionAuthorFcmToken);
+        /* 질문에 대한 알림 수신여부 검사 */
+        if("Y".equals(alarmJpaRepository.findAlarmYNByMemberAndQuestion(poll.getMember(), poll.getQuestion()))) {
+            /* 솔루션 작성자에게 발급된 FCM 토큰 가져오기 */
+            String solutionAuthorEmail = poll.getMember().getEmail();
+            String solutionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(solutionAuthorEmail))
+                    .orElseThrow(() -> new FcmTokenNotFoundException("솔루션 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+            list.add(solutionAuthorFcmToken);
+        }
 
-        /* 솔루션에 답글을 작성한 회원들로부터 FCM 토큰 가져오기 */
-        for(Reply reply : replyJpaRepository.findBySolution(solution)) {
-            String replyAuthorEmail = reply.getMember().getEmail();
-            String replyAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(replyAuthorEmail))
-                    .orElseThrow(() -> new FcmTokenNotFoundException("답글 작성자에게 FCM 토큰이 발급되지 않았습니다."));
-            list.add(replyAuthorFcmToken);
+        /* 답글 정보 생성 및 저장 */
+        Reply reply = Reply.builder()
+                .comment(dto.getComment())
+                .solution(solution)
+                .member(member)
+                .build();
+        replyRepository.save(reply);
+
+        /* 현재 답글을 제외한 답글 목록 불러오기 */
+        for(Reply r : replyJpaRepository.findBySolutionExceptReplier(solution, reply)) {
+            /* 질문에 대한 알림 수신여부 검사 */
+            if("Y".equals(alarmJpaRepository.findAlarmYNByMemberAndQuestion(r.getMember(), poll.getQuestion()))) {
+                /* 솔루션에 답글을 작성한 회원들로부터 FCM 토큰 가져오기 */
+                String replyAuthorEmail = r.getMember().getEmail();
+                String replyAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(replyAuthorEmail))
+                        .orElseThrow(() -> new FcmTokenNotFoundException("답글 작성자에게 FCM 토큰이 발급되지 않았습니다."));
+                list.add(replyAuthorFcmToken);
+            }
         }
 
         /* FCM */
@@ -291,12 +330,25 @@ public class ArticleServiceImpl implements ArticleService {
             log.error("FCM Service Error: {}", e.getMessage());
         }
 
-        /* 알림이 전송된 이후에 답글 정보 저장 */
-        replyRepository.save(Reply.builder()
-                .comment(dto.getComment())
-                .solution(solution)
-                .member(member)
-                .build());
+        /* 알림 수신여부(Y) 등록 */
+        if(!alarmJpaRepository.existsAlarmByMemberAndQuestion(member, poll.getQuestion())) {
+            alarmRepository.save(Alarm.builder()
+                    .member(member)
+                    .question(poll.getQuestion())
+                    .alarmYN("Y")
+                    .build());
+        }
+    }
+
+    @Transactional
+    public void setAlarmOnQuestion(String accessToken, AlarmSettingDTO dto) {
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(accessToken))
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+        Question question = Optional.ofNullable(questionRepository.findOne(dto.getQuestionId()))
+                .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
+        Alarm alarm = Optional.ofNullable(alarmJpaRepository.findByMemberAndQuestion(member, question))
+                .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대한 알림 설정 기록이 존재하지 않습니다."));
+        alarm.setAlarmYN(dto.getAlarmYN());
     }
 
     private List<QuestionListDTO> bringQuestionList(List<Question> questions) {

@@ -24,6 +24,9 @@ public class QuestionDetailDTO {
     private String nickname;
 
     @NotBlank
+    private String alarmYN;
+
+    @NotBlank
     private char polled;
 
     @NotBlank
