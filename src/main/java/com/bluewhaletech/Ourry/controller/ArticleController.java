@@ -1,5 +1,6 @@
 package com.bluewhaletech.Ourry.controller;
 
+import com.bluewhaletech.Ourry.dto.AlarmSettingDTO;
 import com.bluewhaletech.Ourry.dto.QuestionRegistrationDTO;
 import com.bluewhaletech.Ourry.dto.QuestionResponseDTO;
 import com.bluewhaletech.Ourry.dto.ReplyRegistrationDTO;
@@ -61,6 +62,13 @@ public class ArticleController {
     public ResponseEntity<Object> addReply(HttpServletRequest request, @RequestBody ReplyRegistrationDTO dto) {
         String email = tokenProvider.getTokenSubject(request.getHeader("Authorization").substring(7));
         articleService.addReply(email, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/article/setAlarmOnQuestion")
+    public ResponseEntity<Object> setAlarmOnQuestion(HttpServletRequest request, @RequestBody AlarmSettingDTO dto) {
+        String accessToken = request.getHeader("Authorization").substring(7);
+        articleService.setAlarmOnQuestion(accessToken, dto);
         return ResponseEntity.ok().build();
     }
 }

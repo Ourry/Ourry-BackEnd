@@ -2,12 +2,15 @@ package com.bluewhaletech.Ourry.dto;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class MemberIdDTO {
+public class AlarmSettingDTO {
     @NotEmpty
-    @JsonSetter("memberId")
-    private Long memberId;
+    @JsonSetter("questionId")
+    private Long questionId;
+
+    @NotEmpty
+    @JsonSetter("alarmYN")
+    private String alarmYN;
 }
