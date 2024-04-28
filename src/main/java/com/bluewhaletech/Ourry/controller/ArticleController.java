@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @Controller
 public class ArticleController {
     private final ArticleServiceImpl articleService;
@@ -40,7 +42,10 @@ public class ArticleController {
 
     @GetMapping("/article/getQuestionDetail")
     public ResponseEntity<Object> getQuestionDetail(HttpServletRequest request, @RequestParam(value = "questionId") Long questionId) {
-        String email = tokenProvider.getTokenSubject(request.getHeader("Authorization").substring(7));
+        String email = null;
+        if(request.getHeader("Authorization") != null) {
+            email = tokenProvider.getTokenSubject(request.getHeader("Authorization").substring(7));
+        }
         return ResponseEntity.ok().body(articleService.getQuestionDetail(email, questionId));
     }
 
