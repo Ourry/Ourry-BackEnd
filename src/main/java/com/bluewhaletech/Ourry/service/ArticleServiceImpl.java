@@ -154,6 +154,13 @@ public class ArticleServiceImpl implements ArticleService {
             }
         }
 
+        /* 비회원과 미응답자는 솔루션 및 답글 정보 확인 불가 */
+        int solutionCnt = solutions.size();
+        int replyCnt = replies.size();
+        if(polled == 'N') {
+            solutions = null;
+            replies = null;
+        }
         return QuestionDetailDTO.builder()
                 .title(question.getTitle())
                 .content(question.getContent())
@@ -163,7 +170,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .alarmYN(alarmYN)
                 .polled(polled)
                 .pollCnt(polls.size())
-                .responseCnt(solutions.size()+replies.size())
+                .responseCnt(solutionCnt+replyCnt)
                 .createdAt(question.getCreatedAt())
                 .choices(choices)
                 .solutions(solutions)
