@@ -12,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
 @Controller
 public class ArticleController {
     private final ArticleServiceImpl articleService;
@@ -72,8 +70,8 @@ public class ArticleController {
 
     @PostMapping("/article/setAlarmOnQuestion")
     public ResponseEntity<Object> setAlarmOnQuestion(HttpServletRequest request, @RequestBody AlarmSettingDTO dto) {
-        String accessToken = request.getHeader("Authorization").substring(7);
-        articleService.setAlarmOnQuestion(accessToken, dto);
+        String email = tokenProvider.getTokenSubject(request.getHeader("Authorization").substring(7));
+        articleService.setAlarmOnQuestion(email, dto);
         return ResponseEntity.ok().build();
     }
 }

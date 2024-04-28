@@ -349,14 +349,15 @@ public class ArticleServiceImpl implements ArticleService {
         }
     }
 
+    @Override
     @Transactional
-    public void setAlarmOnQuestion(String accessToken, AlarmSettingDTO dto) {
-        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(accessToken))
+    public void setAlarmOnQuestion(String email, AlarmSettingDTO dto) {
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
         Question question = Optional.ofNullable(questionRepository.findOne(dto.getQuestionId()))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
         Alarm alarm = Optional.ofNullable(alarmJpaRepository.findByMemberAndQuestion(member, question))
-                .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대한 알림 설정 기록이 존재하지 않습니다."));
+                .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대해 투표한 기록이 존재하지 않습니다."));
         alarm.setAlarmYN(dto.getAlarmYN());
     }
 
