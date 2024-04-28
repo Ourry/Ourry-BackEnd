@@ -97,7 +97,7 @@ public class ArticleServiceImpl implements ArticleService {
         /* 회원 투표유무 확인 */
         char polled = 'A'; // 작성자(A)
         if(member == null) {
-            polled = 'U'; // 비회원(U)
+            polled = 'N'; // 미투표(N)
         } else if(!questionJpaRepository.existsByMemberAndQuestionId(member, questionId)) {
             polled = pollJpaRepository.existsByMemberAndQuestion(member, question) ? 'Y' : 'N'; // 투표(Y), 미투표(N)
         }
