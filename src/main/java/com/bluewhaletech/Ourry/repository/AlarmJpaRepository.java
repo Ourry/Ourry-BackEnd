@@ -14,5 +14,5 @@ public interface AlarmJpaRepository extends org.springframework.data.repository.
     Alarm findByMemberAndQuestion(Member member, Question question);
 
     @Query(value = "select a.alarmYN from Alarm a where a.member = :member and a.question = :question")
-    String findAlarmYNByMemberAndQuestion(@Param("member") Member member, @Param("question") Question question);
+    char findAlarmYNByMemberAndQuestion(@Param("member") Member member, @Param("question") Question question);
 }

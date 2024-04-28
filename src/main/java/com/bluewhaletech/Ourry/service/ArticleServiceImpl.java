@@ -76,21 +76,29 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public QuestionDetailDTO getQuestionDetail(String email, Long questionId) {
-        /* 회원 존재유무 확인 */
-        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
-                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+        /* 비회원 확인 */
+        Member member = null;
+        if(email != null) {
+            /* 회원 존재유무 확인 */
+            member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
+                    .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+        }
 
         /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(questionId))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
 
-        /* 알림 수신여부 가져오기 */
-        Alarm alarm = Optional.ofNullable(alarmJpaRepository.findByMemberAndQuestion(member, question))
-                .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대한 알림 설정 기록이 존재하지 않습니다."));
+        /* 알림 수신유무 확인 */
+        char alarmYN = 'N'; // 미수신(N)
+        if(member != null && alarmJpaRepository.existsAlarmByMemberAndQuestion(member, question)) {
+            alarmYN = alarmJpaRepository.findAlarmYNByMemberAndQuestion(member, question);
+        }
 
         /* 회원 투표유무 확인 */
         char polled = 'A'; // 작성자(A)
-        if(!questionJpaRepository.existsByMemberAndQuestionId(member, questionId)) {
+        if(member == null) {
+            polled = 'N'; // 미투표(N)
+        } else if(!questionJpaRepository.existsByMemberAndQuestionId(member, questionId)) {
             polled = pollJpaRepository.existsByMemberAndQuestion(member, question) ? 'Y' : 'N'; // 투표(Y), 미투표(N)
         }
 
@@ -146,15 +154,23 @@ public class ArticleServiceImpl implements ArticleService {
             }
         }
 
+        /* 비회원과 미응답자는 솔루션 및 답글 정보 확인 불가 */
+        int solutionCnt = solutions.size();
+        int replyCnt = replies.size();
+        if(polled == 'N') {
+            solutions = null;
+            replies = null;
+        }
         return QuestionDetailDTO.builder()
                 .title(question.getTitle())
                 .content(question.getContent())
                 .category(question.getCategory().getName())
+                .memberId(question.getMember().getMemberId())
                 .nickname(question.getMember().getNickname())
-                .alarmYN(alarm.getAlarmYN())
+                .alarmYN(alarmYN)
                 .polled(polled)
                 .pollCnt(polls.size())
-                .responseCnt(solutions.size()+replies.size())
+                .responseCnt(solutionCnt+replyCnt)
                 .createdAt(question.getCreatedAt())
                 .choices(choices)
                 .solutions(solutions)
@@ -204,7 +220,7 @@ public class ArticleServiceImpl implements ArticleService {
         /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
-        
+
         /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(dto.getQuestionId()))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
@@ -234,7 +250,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .choice(choice)
                 .build();
         pollRepository.save(poll);
-        
+
         String opinion = dto.getOpinion();
         if(opinion != null) {
             /* FCM */
@@ -246,7 +262,7 @@ public class ArticleServiceImpl implements ArticleService {
                         .build());
 
                 /* 질문에 대한 알림 수신여부 검사 */
-                if("Y".equals(alarmJpaRepository.findAlarmYNByMemberAndQuestion(question.getMember(), question))) {
+                if(alarmJpaRepository.findAlarmYNByMemberAndQuestion(question.getMember(), question) == 'Y') {
                     /* 질문 작성자에게 발급된 FcmToken 가져오기 */
                     String questionAuthorEmail = question.getMember().getEmail();
                     String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
@@ -292,7 +308,7 @@ public class ArticleServiceImpl implements ArticleService {
         list.add(questionAuthorFcmToken);
 
         /* 질문에 대한 알림 수신여부 검사 */
-        if("Y".equals(alarmJpaRepository.findAlarmYNByMemberAndQuestion(poll.getMember(), poll.getQuestion()))) {
+        if(alarmJpaRepository.findAlarmYNByMemberAndQuestion(poll.getMember(), poll.getQuestion()) == 'Y') {
             /* 솔루션 작성자에게 발급된 FCM 토큰 가져오기 */
             String solutionAuthorEmail = poll.getMember().getEmail();
             String solutionAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(solutionAuthorEmail))
@@ -311,7 +327,7 @@ public class ArticleServiceImpl implements ArticleService {
         /* 현재 답글을 제외한 답글 목록 불러오기 */
         for(Reply r : replyJpaRepository.findBySolutionExceptReplier(solution, reply)) {
             /* 질문에 대한 알림 수신여부 검사 */
-            if("Y".equals(alarmJpaRepository.findAlarmYNByMemberAndQuestion(r.getMember(), poll.getQuestion()))) {
+            if(alarmJpaRepository.findAlarmYNByMemberAndQuestion(r.getMember(), poll.getQuestion()) == 'Y') {
                 /* 솔루션에 답글을 작성한 회원들로부터 FCM 토큰 가져오기 */
                 String replyAuthorEmail = r.getMember().getEmail();
                 String replyAuthorFcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(replyAuthorEmail))
@@ -340,14 +356,15 @@ public class ArticleServiceImpl implements ArticleService {
         }
     }
 
+    @Override
     @Transactional
-    public void setAlarmOnQuestion(String accessToken, AlarmSettingDTO dto) {
-        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(accessToken))
+    public void setAlarmOnQuestion(String email, AlarmSettingDTO dto) {
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
         Question question = Optional.ofNullable(questionRepository.findOne(dto.getQuestionId()))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
         Alarm alarm = Optional.ofNullable(alarmJpaRepository.findByMemberAndQuestion(member, question))
-                .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대한 알림 설정 기록이 존재하지 않습니다."));
+                .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대해 투표한 기록이 존재하지 않습니다."));
         alarm.setAlarmYN(dto.getAlarmYN());
     }
 

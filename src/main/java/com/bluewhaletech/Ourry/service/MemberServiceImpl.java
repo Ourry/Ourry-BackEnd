@@ -87,7 +87,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Transactional
-    public JwtDTO memberLogin(MemberLoginDTO dto) {
+    public JwtDTO memberLogin(MemberLoginDTO dto, String fcmToken) {
         /* 이메일 유효성 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .orElseThrow(() -> new MemberNotFoundException("등록되지 않은 이메일입니다."));
@@ -96,6 +96,9 @@ public class MemberServiceImpl implements MemberService {
         if(!passwordEncoder.matches(dto.getPassword(), member.getPassword())) {
             throw new PasswordConfirmException("비밀번호가 일치하지 않습니다.");
         }
+
+        /* 로그인할 때마다 FCM 토큰 값 갱신 */
+        member.setFcmToken(fcmToken);
 
         /* 이메일 & 비밀번호를 바탕으로 인증(Authentication) 정보 생성 및 JWT 발급 */
         return memberAuthentication(member);

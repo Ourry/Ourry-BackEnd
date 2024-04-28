@@ -21,10 +21,13 @@ public class QuestionDetailDTO {
     private String category;
 
     @NotBlank
+    private Long memberId;
+
+    @NotBlank
     private String nickname;
 
     @NotBlank
-    private String alarmYN;
+    private char alarmYN;
 
     @NotBlank
     private char polled;

@@ -1,6 +1,7 @@
 package com.bluewhaletech.Ourry.controller;
 
 import com.bluewhaletech.Ourry.dto.*;
+import com.bluewhaletech.Ourry.exception.FcmTokenNotFoundException;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 
 @Controller
 public class MemberController {
@@ -29,7 +31,8 @@ public class MemberController {
      */
     @PostMapping("/member/createAccount")
     public ResponseEntity<Object> createAccount(HttpServletRequest request, @RequestBody MemberRegistrationDTO dto) {
-        String fcmToken = request.getHeader("FirebaseCloudMessaging");
+        String fcmToken = Optional.ofNullable(request.getHeader("FirebaseCloudMessaging"))
+                .orElseThrow(() -> new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다."));
         memberService.createAccount(dto, fcmToken);
         return ResponseEntity.ok().build();
     }
@@ -40,8 +43,10 @@ public class MemberController {
      * @return jwt (JWT)
      */
     @PostMapping("/member/memberLogin")
-    public ResponseEntity<Object> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletResponse response) {
-        JwtDTO newJwt = memberService.memberLogin(dto);
+    public ResponseEntity<Object> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletRequest request, HttpServletResponse response) {
+        String fcmToken = Optional.ofNullable(request.getHeader("FirebaseCloudMessaging"))
+                .orElseThrow(() -> new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다."));
+        JwtDTO newJwt = memberService.memberLogin(dto, fcmToken);
         response.setHeader("Authorization", "Bearer " + newJwt.getAccessToken());
         response.setHeader("Refresh", "Bearer " + newJwt.getRefreshToken());
         return ResponseEntity.ok().build();

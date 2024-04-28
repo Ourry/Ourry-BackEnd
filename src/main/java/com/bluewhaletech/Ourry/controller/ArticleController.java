@@ -40,7 +40,10 @@ public class ArticleController {
 
     @GetMapping("/article/getQuestionDetail")
     public ResponseEntity<Object> getQuestionDetail(HttpServletRequest request, @RequestParam(value = "questionId") Long questionId) {
-        String email = tokenProvider.getTokenSubject(request.getHeader("Authorization").substring(7));
+        String email = null;
+        if(request.getHeader("Authorization") != null) {
+            email = tokenProvider.getTokenSubject(request.getHeader("Authorization").substring(7));
+        }
         return ResponseEntity.ok().body(articleService.getQuestionDetail(email, questionId));
     }
 
@@ -67,8 +70,8 @@ public class ArticleController {
 
     @PostMapping("/article/setAlarmOnQuestion")
     public ResponseEntity<Object> setAlarmOnQuestion(HttpServletRequest request, @RequestBody AlarmSettingDTO dto) {
-        String accessToken = request.getHeader("Authorization").substring(7);
-        articleService.setAlarmOnQuestion(accessToken, dto);
+        String email = tokenProvider.getTokenSubject(request.getHeader("Authorization").substring(7));
+        articleService.setAlarmOnQuestion(email, dto);
         return ResponseEntity.ok().build();
     }
 }

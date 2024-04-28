@@ -18,4 +18,6 @@ public interface ArticleService {
     void answerQuestion(String email, QuestionResponseDTO dto);
 
     void addReply(String email, ReplyRegistrationDTO dto);
+
+    void setAlarmOnQuestion(String email, AlarmSettingDTO dto);
 }
