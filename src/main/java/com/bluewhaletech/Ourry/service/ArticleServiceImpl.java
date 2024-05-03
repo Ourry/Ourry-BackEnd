@@ -3,6 +3,7 @@ package com.bluewhaletech.Ourry.service;
 import com.bluewhaletech.Ourry.domain.*;
 import com.bluewhaletech.Ourry.dto.*;
 import com.bluewhaletech.Ourry.exception.*;
+import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class ArticleServiceImpl implements ArticleService {
+    private final JwtProvider tokenProvider;
     private final FcmServiceImpl fcmService;
     private final MemberJpaRepository memberJpaRepository;
     private final QuestionRepository questionRepository;
@@ -33,7 +35,8 @@ public class ArticleServiceImpl implements ArticleService {
     private final AlarmJpaRepository alarmJpaRepository;
 
     @Autowired
-    public ArticleServiceImpl(FcmServiceImpl fcmService, MemberJpaRepository memberJpaRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, AlarmRepository alarmRepository, AlarmJpaRepository alarmJpaRepository) {
+    public ArticleServiceImpl(JwtProvider tokenProvider, FcmServiceImpl fcmService, MemberJpaRepository memberJpaRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, AlarmRepository alarmRepository, AlarmJpaRepository alarmJpaRepository) {
+        this.tokenProvider = tokenProvider;
         this.fcmService = fcmService;
         this.memberJpaRepository = memberJpaRepository;
         this.questionRepository = questionRepository;
@@ -49,13 +52,6 @@ public class ArticleServiceImpl implements ArticleService {
         this.replyJpaRepository = replyJpaRepository;
         this.alarmRepository = alarmRepository;
         this.alarmJpaRepository = alarmJpaRepository;
-    }
-
-    @Override
-    public List<QuestionListDTO> searchQuestionList(String searchKeyword) {
-        List<Question> questions = Optional.ofNullable(questionJpaRepository.searchQuestionList(searchKeyword))
-                .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
-        return bringQuestionList(questions);
     }
 
     @Override
@@ -75,11 +71,12 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public QuestionDetailDTO getQuestionDetail(String email, Long questionId) {
+    public QuestionDetailDTO getQuestionDetail(String accessToken, Long questionId) {
         /* 비회원 확인 */
         Member member = null;
-        if(email != null) {
+        if(accessToken != null) {
             /* 회원 존재유무 확인 */
+            String email = tokenProvider.getTokenSubject(accessToken.substring(7));
             member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                     .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
         }
@@ -179,8 +176,18 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    public List<QuestionListDTO> searchQuestionList(String searchKeyword) {
+        List<Question> questions = Optional.ofNullable(questionJpaRepository.searchQuestionList(searchKeyword))
+                .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
+        return bringQuestionList(questions);
+    }
+
+    @Override
     @Transactional
-    public void addQuestion(String email, QuestionRegistrationDTO dto) {
+    public void addQuestion(String accessToken, QuestionRegistrationDTO dto) {
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
         /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
@@ -216,7 +223,10 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public void answerQuestion(String email, QuestionResponseDTO dto) {
+    public void answerQuestion(String accessToken, QuestionResponseDTO dto) {
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
         /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
@@ -285,7 +295,10 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public void addReply(String email, ReplyRegistrationDTO dto) {
+    public void addReply(String accessToken, ReplyRegistrationDTO dto) {
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
         /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("답글을 작성한 회원 정보가 존재하지 않습니다."));
@@ -358,11 +371,19 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     @Transactional
-    public void setAlarmOnQuestion(String email, AlarmSettingDTO dto) {
+    public void setAlarmOnQuestion(String accessToken, AlarmSettingDTO dto) {
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
+        /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+
+        /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(dto.getQuestionId()))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
+
+        /* 질문에 대한 투표 기록 확인 */
         Alarm alarm = Optional.ofNullable(alarmJpaRepository.findByMemberAndQuestion(member, question))
                 .orElseThrow(() -> new AlarmSettingNotFoundException("질문에 대해 투표한 기록이 존재하지 않습니다."));
         alarm.setAlarmYN(dto.getAlarmYN());

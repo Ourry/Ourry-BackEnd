@@ -54,9 +54,14 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public MemberInfoDTO getMemberInfo(String email) {
+    public MemberInfoDTO getMemberInfo(String accessToken) {
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
+        /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+
         return MemberInfoDTO.builder()
                 .email(email)
                 .nickname(member.getNickname())
@@ -77,7 +82,7 @@ public class MemberServiceImpl implements MemberService {
     public void createAccount(MemberRegistrationDTO dto, String fcmToken) {
         /* FCM 토큰 포함여부 확인 */
         if(fcmToken == null || fcmToken.isEmpty()) {
-            throw new FcmTokenNotFoundException("FCM 토큰이 존재하지 않습니다.");
+            throw new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다.");
         }
 
         /* 이메일 중복 확인 */
@@ -109,6 +114,11 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public JwtDTO memberLogin(MemberLoginDTO dto, String fcmToken) {
+        /* FCM 토큰 포함여부 확인 */
+        if(fcmToken == null || fcmToken.isEmpty()) {
+            throw new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다.");
+        }
+
         /* 이메일 유효성 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
                 .orElseThrow(() -> new MemberNotFoundException("등록되지 않은 이메일입니다."));
@@ -152,8 +162,8 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public void memberLogout(String accessToken) {
-        /* Access Token으로부터 Subject(Email) 가져오기 */
-        String email = tokenProvider.getTokenSubject(accessToken);
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
         /* Email로부터 Member ID 가져오기 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
@@ -234,7 +244,13 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public void addFcmToken(String email, String fcmToken) {
+    public void addFcmToken(String accessToken, String fcmToken) {
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+        /* FCM 토큰 포함여부 확인 */
+        if(fcmToken == null || fcmToken.isEmpty()) {
+            throw new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다.");
+        }
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
         member.setFcmToken(fcmToken);

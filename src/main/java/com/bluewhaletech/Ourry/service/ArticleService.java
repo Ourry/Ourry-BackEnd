@@ -5,19 +5,19 @@ import com.bluewhaletech.Ourry.dto.*;
 import java.util.List;
 
 public interface ArticleService {
-    List<QuestionListDTO> searchQuestionList(String searchKeyword);
-
     List<QuestionListDTO> getQuestionList();
 
     List<QuestionListDTO> getQuestionList(Long categoryId);
 
-    QuestionDetailDTO getQuestionDetail(String email, Long questionId);
+    QuestionDetailDTO getQuestionDetail(String accessToken, Long questionId);
 
-    void addQuestion(String email, QuestionRegistrationDTO dto);
+    List<QuestionListDTO> searchQuestionList(String searchKeyword);
 
-    void answerQuestion(String email, QuestionResponseDTO dto);
+    void addQuestion(String accessToken, QuestionRegistrationDTO dto);
 
-    void addReply(String email, ReplyRegistrationDTO dto);
+    void answerQuestion(String accessToken, QuestionResponseDTO dto);
 
-    void setAlarmOnQuestion(String email, AlarmSettingDTO dto);
+    void addReply(String accessToken, ReplyRegistrationDTO dto);
+
+    void setAlarmOnQuestion(String accessToken, AlarmSettingDTO dto);
 }

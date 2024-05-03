@@ -1,7 +1,6 @@
 package com.bluewhaletech.Ourry.controller;
 
 import com.bluewhaletech.Ourry.dto.*;
-import com.bluewhaletech.Ourry.exception.FcmTokenNotFoundException;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import jakarta.mail.MessagingException;
@@ -15,17 +14,26 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Optional;
 
 @Controller
 public class MemberController {
     private final MemberServiceImpl memberService;
-    private final JwtProvider tokenProvider;
 
     @Autowired
     public MemberController(MemberServiceImpl memberService, JwtProvider tokenProvider) {
         this.memberService = memberService;
-        this.tokenProvider = tokenProvider;
+    }
+
+    @GetMapping("/member/getMemberInfo")
+    public ResponseEntity<Object> getMemberInfo(HttpServletRequest request) {
+        String accessToken = request.getHeader("Authorization");
+        return ResponseEntity.ok().body(memberService.getMemberInfo(accessToken));
+    }
+
+    @PostMapping("/member/updateProfile")
+    public ResponseEntity<Object> updateProfile(@RequestBody MemberDTO dto) {
+        memberService.updateProfile(dto);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -35,8 +43,7 @@ public class MemberController {
      */
     @PostMapping("/member/createAccount")
     public ResponseEntity<Object> createAccount(HttpServletRequest request, @RequestBody MemberRegistrationDTO dto) {
-        String fcmToken = Optional.ofNullable(request.getHeader("FirebaseCloudMessaging"))
-                .orElseThrow(() -> new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다."));
+        String fcmToken = request.getHeader("FirebaseCloudMessaging");
         memberService.createAccount(dto, fcmToken);
         return ResponseEntity.ok().build();
     }
@@ -48,9 +55,8 @@ public class MemberController {
      */
     @PostMapping("/member/memberLogin")
     public ResponseEntity<Object> memberLogin(@RequestBody MemberLoginDTO dto, HttpServletRequest request, HttpServletResponse response) {
-        String fcmToken = Optional.ofNullable(request.getHeader("FirebaseCloudMessaging"))
-                .orElseThrow(() -> new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다."));
-        JwtDTO newJwt = memberService.memberLogin(dto, fcmToken);
+        String fckToken = request.getHeader("FirebaseCloudMessaging");
+        JwtDTO newJwt = memberService.memberLogin(dto, fckToken);
         response.setHeader("Authorization", "Bearer " + newJwt.getAccessToken());
         response.setHeader("Refresh", "Bearer " + newJwt.getRefreshToken());
         return ResponseEntity.ok().build();
@@ -61,7 +67,8 @@ public class MemberController {
      */
     @PostMapping("/member/reissueToken")
     public ResponseEntity<Object> reissueToken(HttpServletRequest request, HttpServletResponse response) {
-        JwtDTO newJwt = memberService.reissueToken(request.getHeader("Refresh"));
+        String refreshToken = request.getHeader("Refresh");
+        JwtDTO newJwt = memberService.reissueToken(refreshToken);
         response.setHeader("Authorization", "Bearer " + newJwt.getAccessToken());
         response.setHeader("Refresh", "Bearer " + newJwt.getRefreshToken());
         return ResponseEntity.ok().build();
@@ -72,7 +79,7 @@ public class MemberController {
      */
     @PostMapping("/member/memberLogout")
     public ResponseEntity<Object> memberLogout(HttpServletRequest request) {
-        String accessToken = request.getHeader("Authorization").substring(7);
+        String accessToken = request.getHeader("Authorization");
         memberService.memberLogout(accessToken);
         return ResponseEntity.ok().build();
     }
@@ -113,23 +120,9 @@ public class MemberController {
      */
     @PostMapping("/member/addFcmToken")
     public ResponseEntity<Object> addFcmToken(HttpServletRequest request) {
-        String accessToken = request.getHeader("Authorization").substring(7);
+        String accessToken = request.getHeader("Authorization");
         String fcmToken = request.getHeader("FirebaseCloudMessaging");
-        String email = tokenProvider.getTokenSubject(accessToken);
-        memberService.addFcmToken(email, fcmToken);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/member/getMemberInfo")
-    public ResponseEntity<Object> getMemberInfo(HttpServletRequest request) {
-        String accessToken = request.getHeader("Authorization").substring(7);
-        String email = tokenProvider.getTokenSubject(accessToken);
-        return ResponseEntity.ok().body(memberService.getMemberInfo(email));
-    }
-
-    @PostMapping("/member/updateProfile")
-    public ResponseEntity<Object> updateProfile(@RequestBody MemberDTO dto) {
-        memberService.updateProfile(dto);
+        memberService.addFcmToken(accessToken, fcmToken);
         return ResponseEntity.ok().build();
     }
 }
