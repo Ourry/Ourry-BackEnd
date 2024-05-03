@@ -53,6 +53,26 @@ public class MemberServiceImpl implements MemberService {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
     }
 
+    @Override
+    public MemberInfoDTO getMemberInfo(String email) {
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+        return MemberInfoDTO.builder()
+                .email(email)
+                .nickname(member.getNickname())
+                .phone(member.getPhone())
+                .createdAt(member.getCreatedAt())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void updateProfile(MemberDTO dto) {
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
+                .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));
+    }
+
+    @Override
     @Transactional
     public void createAccount(MemberRegistrationDTO dto, String fcmToken) {
         /* FCM 토큰 포함여부 확인 */
@@ -86,6 +106,7 @@ public class MemberServiceImpl implements MemberService {
         redisEmailAuthentication.deleteEmailAuthenticationHistory(member.getEmail());
     }
 
+    @Override
     @Transactional
     public JwtDTO memberLogin(MemberLoginDTO dto, String fcmToken) {
         /* 이메일 유효성 확인 */
@@ -104,6 +125,7 @@ public class MemberServiceImpl implements MemberService {
         return memberAuthentication(member);
     }
 
+    @Override
     @Transactional
     public JwtDTO reissueToken(String token) {
         /* Refresh Token 인입여부 및 유효성 확인 */
@@ -127,6 +149,7 @@ public class MemberServiceImpl implements MemberService {
         return memberAuthentication(member);
     }
 
+    @Override
     @Transactional
     public void memberLogout(String accessToken) {
         /* Access Token으로부터 Subject(Email) 가져오기 */
@@ -140,6 +163,7 @@ public class MemberServiceImpl implements MemberService {
         redisBlackListManagement.setAccessTokenExpire(accessToken, tokenProvider.getTokenExpiration(accessToken));
     }
 
+    @Override
     @Transactional
     public void sendAuthenticationCode(EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
         /* 인증코드 생성 및 유효기간 5분으로 설정 */
@@ -164,6 +188,7 @@ public class MemberServiceImpl implements MemberService {
         mailService.sendMail(data);
     }
 
+    @Override
     @Transactional
     public void emailAuthentication(EmailAuthenticationDTO dto) {
         /* 회원 이메일로 전송된 인증코드 */
@@ -183,6 +208,7 @@ public class MemberServiceImpl implements MemberService {
         redisEmailAuthentication.setEmailAuthenticationComplete(dto.getEmail());
     }
 
+    @Override
     @Transactional
     public void passwordReset(PasswordResetDTO dto) {
         /* 이메일(회원) 존재 확인 */
@@ -206,17 +232,12 @@ public class MemberServiceImpl implements MemberService {
         redisEmailAuthentication.deleteEmailAuthenticationHistory(member.getEmail());
     }
 
+    @Override
     @Transactional
-    public void addFcmToken(String accessToken, String fcmToken) {
-        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(tokenProvider.getTokenSubject(accessToken)))
+    public void addFcmToken(String email, String fcmToken) {
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
         member.setFcmToken(fcmToken);
-    }
-
-    @Transactional
-    public void updateProfile(MemberDTO dto) {
-        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
-                .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));
     }
 
     private JwtDTO memberAuthentication(Member member) {
