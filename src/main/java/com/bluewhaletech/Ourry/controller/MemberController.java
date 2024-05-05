@@ -24,22 +24,40 @@ public class MemberController {
         this.memberService = memberService;
     }
 
+    /**
+     * 회원정보 불러오기 API
+     * @return dto (email, nickname, phone, createdAt)
+     */
     @GetMapping("/member/getMemberInfo")
     public ResponseEntity<Object> getMemberInfo(HttpServletRequest request) {
         String accessToken = request.getHeader("Authorization");
         return ResponseEntity.ok().body(memberService.getMemberInfo(accessToken));
     }
 
-    @PostMapping("/member/updateProfile")
-    public ResponseEntity<Object> updateProfile(@RequestBody MemberDTO dto) {
-        memberService.updateProfile(dto);
+    /**
+     * 닉네임 변경 API
+     * @param dto (nickname, password)
+     */
+    @PostMapping("/member/updateNickname")
+    public ResponseEntity<Object> updateNickname(HttpServletRequest request, @RequestBody NicknameUpdateDTO dto) {
+        String accessToken = request.getHeader("Authorization");
+        memberService.updateNickname(accessToken, dto);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 비밀번호 재설정 API
+     * @param dto (email, newPassword, confirmPassword)
+     */
+    @PostMapping("/member/passwordReset")
+    public ResponseEntity<Object> passwordReset(@RequestBody PasswordResetDTO dto) {
+        memberService.passwordReset(dto);
         return ResponseEntity.ok().build();
     }
 
     /**
      * 회원가입 API
      * @param dto (email, password, nickname, phone)
-     * @return memberId (회원 엔티티 PK)
      */
     @PostMapping("/member/createAccount")
     public ResponseEntity<Object> createAccount(HttpServletRequest request, @RequestBody MemberRegistrationDTO dto) {
@@ -102,16 +120,6 @@ public class MemberController {
     @PostMapping("/member/emailAuthentication")
     public ResponseEntity<Object> emailAuthentication(@RequestBody EmailAuthenticationDTO dto) {
         memberService.emailAuthentication(dto);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * 비밀번호 재설정 API
-     * @param dto (email, newPassword, confirmPassword)
-     */
-    @PostMapping("/member/passwordReset")
-    public ResponseEntity<Object> passwordReset(@RequestBody PasswordResetDTO dto) {
-        memberService.passwordReset(dto);
         return ResponseEntity.ok().build();
     }
 

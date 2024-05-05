@@ -5,7 +5,7 @@ import com.bluewhaletech.Ourry.dto.*;
 public interface MemberService {
     MemberInfoDTO getMemberInfo(String email) throws Exception;
 
-    void updateProfile(MemberDTO dto) throws Exception;
+    void updateNickname(String accessToken, NicknameUpdateDTO dto) throws Exception;
 
     void createAccount(MemberRegistrationDTO dto, String fcmToken) throws Exception;
 

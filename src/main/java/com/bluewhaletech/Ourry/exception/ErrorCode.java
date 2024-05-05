@@ -8,13 +8,14 @@ import lombok.Getter;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public enum ErrorCode {
     // 회원
-    EMAIL_DUPLICATION("M001", "중복되는 이메일이 존재합니다. 다시 확인해주세요. ", 400), // 이메일 중복
+    EMAIL_DUPLICATED("M001", "중복되는 이메일이 존재합니다. 다시 확인해주세요. ", 400), // 이메일 중복
     EMAIL_INCORRECT("M002", "이메일이 일치하지 않습니다. 다시 확인해주세요", 400), // 이메일 불일치
     PASSWORD_MISMATCH("M003", "비밀번호가 일치하지 않습니다. 다시 확인해주세요.", 400), // 비밀번호 불일치
     MEMBER_NOT_FOUND("M004", "회원 정보를 찾을 수 없습니다.", 400), // 등록되지 않은 회원
     EMAIL_AUTHENTICATION_NOT_COMPLETED("M005", "이메일 인증이 완료되지 않았습니다.", 400), // 이메일 인증 미완료
     EMAIL_AUTHENTICATION_CODE_MISMATCH("M006", "이메일 인증코드가 일치하지 않습니다. 다시 확인해주세요.", 400), // 이메일 인증코드 불일치
-    FCM_TOKEN_NOT_FOUND("M007", "FCM 토큰을 불러올 수 없습니다.", 400),
+    NICKNAME_DUPLICATED("M008", "중복되는 닉네임이 존재합니다. 다시 확인해주세요.", 400),
+    FCM_TOKEN_NOT_FOUND("M008", "FCM 토큰을 불러올 수 없습니다.", 400),
 
     // 인증
     EMPTY_JWT("A001", "JWT 토큰이 인입되지 않았습니다.", 401), // Access Token 없는 요청

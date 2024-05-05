@@ -72,9 +72,26 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public void updateProfile(MemberDTO dto) {
-        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
-                .orElseThrow(() -> new EmailIncorrectException("등록되지 않은 이메일입니다."));
+    public void updateNickname(String accessToken, NicknameUpdateDTO dto) {
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
+        /* 회원 존재유무 확인 */
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+
+        /* 비밀번호 일치 확인 */
+        if(!passwordEncoder.matches(dto.getPassword(), member.getPassword())) {
+            throw new PasswordConfirmException("비밀번호가 일치하지 않습니다.");
+        }
+
+        /* 닉네임 중복 확인 */
+        if(memberJpaRepository.existsByNickname(dto.getNickname())) {
+            throw new NicknameDuplicatedException("중복되는 닉네임이 존재합니다.");
+        }
+
+        /* 닉네임 변경 */
+        member.setNickname(dto.getNickname());
     }
 
     @Override
@@ -86,10 +103,14 @@ public class MemberServiceImpl implements MemberService {
         }
 
         /* 이메일 중복 확인 */
-        Optional.ofNullable(memberJpaRepository.findByEmail(dto.getEmail()))
-                .ifPresent(member -> {
-                    throw new MemberEmailDuplicationException("중복되는 이메일이 존재합니다.");
-                });
+        if(memberJpaRepository.existsByEmail(dto.getEmail())) {
+            throw new EmailDuplicatedException("중복되는 이메일이 존재합니다.");
+        }
+
+        /* 닉네임 중복 확인 */
+        if(memberJpaRepository.existsByNickname(dto.getNickname())) {
+            throw new NicknameDuplicatedException("중복되는 닉네임이 존재합니다.");
+        }
 
         /* 이메일 인증여부 확인 */
 //        if(redisEmailAuthentication.getEmailAuthenticationCode(dto.getEmail()) == null || !redisEmailAuthentication.checkEmailAuthentication(dto.getEmail()).equals("Y")) {
@@ -164,11 +185,14 @@ public class MemberServiceImpl implements MemberService {
     public void memberLogout(String accessToken) {
         /* Access Token으로부터 이메일 가져오기 */
         String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
         /* Email로부터 Member ID 가져오기 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
+
         /* Redis 내부에 저장된 Refresh Token 값 삭제 */
         redisJwtRepository.deleteById(member.getMemberId());
+
         /* Redis 내부에 해당 Access Token 값을 BlackList로 저장 */
         redisBlackListManagement.setAccessTokenExpire(accessToken, tokenProvider.getTokenExpiration(accessToken));
     }
@@ -178,6 +202,7 @@ public class MemberServiceImpl implements MemberService {
     public void sendAuthenticationCode(EmailAddressDTO dto) throws MessagingException, UnsupportedEncodingException {
         /* 인증코드 생성 및 유효기간 5분으로 설정 */
         String code = createRandomCode();
+
         /* Redis 내부에 생성한 인증코드 저장 */
         redisEmailAuthentication.setEmailAuthenticationExpire(dto.getEmail(), code, 5L);
 
@@ -188,14 +213,12 @@ public class MemberServiceImpl implements MemberService {
         text += "<br/><br/>";
         text += "인증코드 : <b>"+code+"</b>";
 
-        EmailDTO data = EmailDTO.builder()
+        /* 입력한 이메일로 인증코드 발송 */
+        mailService.sendMail(EmailDTO.builder()
                 .email(dto.getEmail())
                 .title("이메일 인증코드 발송 메일입니다.")
                 .text(text)
-                .build();
-
-        /* 입력한 이메일로 인증코드 발송 */
-        mailService.sendMail(data);
+                .build());
     }
 
     @Override
@@ -247,12 +270,17 @@ public class MemberServiceImpl implements MemberService {
     public void addFcmToken(String accessToken, String fcmToken) {
         /* Access Token으로부터 이메일 가져오기 */
         String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
         /* FCM 토큰 포함여부 확인 */
         if(fcmToken == null || fcmToken.isEmpty()) {
             throw new FcmTokenNotFoundException("FCM 토큰값이 비어있습니다.");
         }
+
+        /* 회원 존재유무 확인 */
         Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
+
+        /* FCM 토큰 갱신 */
         member.setFcmToken(fcmToken);
     }
 
@@ -261,14 +289,14 @@ public class MemberServiceImpl implements MemberService {
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
                 new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword())
         );
-        AuthenticationDTO authenticationDTO = AuthenticationDTO.builder()
+
+        /* JWT 토큰 발급 */
+        JwtDTO token = tokenProvider.createToken(AuthenticationDTO.builder()
                 .tokenId(member.getMemberId())
                 .tokenName(member.getEmail())
                 .authentication(authentication)
-                .build();
+                .build());
 
-        /* JWT 토큰 발급 */
-        JwtDTO token = tokenProvider.createToken(authenticationDTO);
         /* Redis 내부에 Refresh Token 갱신 */
         redisJwtRepository.save(RefreshToken.builder()
                 .tokenId(member.getMemberId())
