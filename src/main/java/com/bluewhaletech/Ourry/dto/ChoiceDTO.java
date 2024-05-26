@@ -9,10 +9,8 @@ import lombok.Getter;
 public class ChoiceDTO {
     @NotBlank
     private int sequence;
-
     @NotBlank
     private String detail;
-
     @NotBlank
     private int count;
 }

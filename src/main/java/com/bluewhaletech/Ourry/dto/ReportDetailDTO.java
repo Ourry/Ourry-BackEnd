@@ -1,25 +1,28 @@
 package com.bluewhaletech.Ourry.dto;
 
+import com.bluewhaletech.Ourry.domain.ArticleType;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Builder
-public class SolutionDTO {
+public class ReportDetailDTO {
     @NotBlank
-    @JsonSetter("solutionId")
-    private Long solutionId;
+    @JsonSetter("reportId")
+    private Long reportId;
     @NotBlank
-    private int sequence;
+    @JsonSetter("reportCnt")
+    private int reportCnt;
     @NotBlank
-    private String opinion;
+    @JsonSetter("articleType")
+    private ArticleType articleType;
     @NotBlank
-    @JsonSetter("memberId")
-    private Long memberId;
+    private String content;
+    @NotBlank
+    @JsonSetter("targetId")
+    private Long targetId;
     @NotBlank
     private String nickname;
     @NotBlank

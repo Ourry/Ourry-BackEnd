@@ -55,14 +55,14 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<QuestionListDTO> getQuestionList() {
+    public List<QuestionDTO> getQuestionList() {
         List<Question> questions = Optional.ofNullable(questionRepository.findAll())
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
         return bringQuestionList(questions);
     }
 
     @Override
-    public List<QuestionListDTO> getQuestionList(Long categoryId) {
+    public List<QuestionDTO> getQuestionList(Long categoryId) {
         Category category = Optional.ofNullable(categoryRepository.findOne(categoryId))
                 .orElseThrow(() -> new CategoryNotFoundException("카테고리 정보가 존재하지 않습니다."));
         List<Question> questions = Optional.ofNullable(questionJpaRepository.findByCategory(category))
@@ -88,7 +88,7 @@ public class ArticleServiceImpl implements ArticleService {
         /* 알림 수신유무 확인 */
         char alarmYN = 'N'; // 미수신(N)
         if(member != null && alarmJpaRepository.existsAlarmByMemberAndQuestion(member, question)) {
-            alarmYN = alarmJpaRepository.findAlarmYNByMemberAndQuestion(member, questㄹㅊion);
+            alarmYN = alarmJpaRepository.findAlarmYNByMemberAndQuestion(member, question);
         }
 
         /* 회원 투표유무 확인 */
@@ -176,7 +176,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<QuestionListDTO> searchQuestionList(String searchKeyword) {
+    public List<QuestionDTO> searchQuestionList(String searchKeyword) {
         List<Question> questions = Optional.ofNullable(questionJpaRepository.searchQuestionList(searchKeyword))
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
         return bringQuestionList(questions);
@@ -389,8 +389,8 @@ public class ArticleServiceImpl implements ArticleService {
         alarm.setAlarmYN(dto.getAlarmYN());
     }
 
-    private List<QuestionListDTO> bringQuestionList(List<Question> questions) {
-        List<QuestionListDTO> list = new ArrayList<>();
+    private List<QuestionDTO> bringQuestionList(List<Question> questions) {
+        List<QuestionDTO> list = new ArrayList<>();
         for(Question question : questions) {
             /* 질문별 투표 데이터 목록 */
             List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
@@ -407,7 +407,7 @@ public class ArticleServiceImpl implements ArticleService {
                 }
             }
 
-            QuestionListDTO dto = QuestionListDTO.builder()
+            QuestionDTO dto = QuestionDTO.builder()
                     .questionId(question.getQuestionId())
                     .title(question.getTitle())
                     .content(question.getContent())

@@ -12,11 +12,9 @@ public class AuthenticationDTO {
     @NotBlank
     @JsonSetter("tokenId")
     private Long tokenId;
-
     @NotBlank
     @JsonSetter("tokenName")
     private String tokenName;
-
     @NotBlank
     private Authentication authentication;
 }

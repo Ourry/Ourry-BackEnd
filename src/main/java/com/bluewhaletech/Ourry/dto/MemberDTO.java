@@ -1,6 +1,7 @@
 package com.bluewhaletech.Ourry.dto;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,19 +12,15 @@ import java.util.Date;
 @Getter
 @Builder
 public class MemberDTO {
-    @NotEmpty
+    @NotBlank
     @JsonSetter("memberId")
     private Long memberId;
-
-    @NotEmpty
+    @NotBlank
     private String email;
-
-    @NotEmpty
+    @NotBlank
     private String password;
-
-    @NotEmpty
+    @NotBlank
     private String nickname;
-
-    @NotEmpty
+    @NotBlank
     private String phone;
 }

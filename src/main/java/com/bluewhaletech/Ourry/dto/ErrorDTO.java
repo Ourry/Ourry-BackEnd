@@ -1,5 +1,6 @@
 package com.bluewhaletech.Ourry.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,12 +10,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class ErrorDTO {
-    @NotEmpty
+    @NotBlank
     private String code;
-
-    @NotEmpty
+    @NotBlank
     private String message;
-
-    @NotEmpty
+    @NotBlank
     private int status;
 }

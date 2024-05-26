@@ -4,17 +4,19 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
-import java.util.List;
-
 @Getter
-public class QuestionRegistrationDTO {
+public class ReportRegistrationDTO {
     @NotBlank
     private String title;
     @NotBlank
-    private String content;
+    private String reason;
     @NotBlank
-    @JsonSetter("categoryId")
-    private Long categoryId;
+    @JsonSetter("articleType")
+    private String articleType;
     @NotBlank
-    private List<ChoiceDTO> choices;
+    @JsonSetter("authorId")
+    private Long authorId;
+    @NotBlank
+    @JsonSetter("targetId")
+    private Long targetId;
 }

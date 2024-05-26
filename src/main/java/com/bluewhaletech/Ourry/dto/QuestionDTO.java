@@ -9,28 +9,22 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class QuestionListDTO {
+public class QuestionDTO {
     @NotBlank
     @JsonSetter("questionId")
     private Long questionId;
-
     @NotBlank
     private String title;
-
     @NotBlank
     private String content;
-
     @NotBlank
     private String nickname;
-
     @NotBlank
     @JsonSetter("pollCnt")
     private int pollCnt;
-
     @NotBlank
     @JsonSetter("responseCnt")
     private int responseCnt;
-
     @NotBlank
     @JsonSetter("createdAt")
     private LocalDateTime createdAt;

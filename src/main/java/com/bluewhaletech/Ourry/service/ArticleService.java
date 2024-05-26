@@ -5,13 +5,13 @@ import com.bluewhaletech.Ourry.dto.*;
 import java.util.List;
 
 public interface ArticleService {
-    List<QuestionListDTO> getQuestionList();
+    List<QuestionDTO> getQuestionList();
 
-    List<QuestionListDTO> getQuestionList(Long categoryId);
+    List<QuestionDTO> getQuestionList(Long categoryId);
 
     QuestionDetailDTO getQuestionDetail(String accessToken, Long questionId);
 
-    List<QuestionListDTO> searchQuestionList(String searchKeyword);
+    List<QuestionDTO> searchQuestionList(String searchKeyword);
 
     void addQuestion(String accessToken, QuestionRegistrationDTO dto);
 

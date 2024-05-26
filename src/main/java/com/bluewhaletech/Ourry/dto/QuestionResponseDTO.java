@@ -9,9 +9,7 @@ public class QuestionResponseDTO {
     @NotBlank
     @JsonSetter("questionId")
     private Long questionId;
-
     @NotBlank
     private int sequence;
-
     private String opinion;
 }
