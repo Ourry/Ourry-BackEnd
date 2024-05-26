@@ -88,7 +88,7 @@ public class ArticleServiceImpl implements ArticleService {
         /* 알림 수신유무 확인 */
         char alarmYN = 'N'; // 미수신(N)
         if(member != null && alarmJpaRepository.existsAlarmByMemberAndQuestion(member, question)) {
-            alarmYN = alarmJpaRepository.findAlarmYNByMemberAndQuestion(member, question);
+            alarmYN = alarmJpaRepository.findAlarmYNByMemberAndQuestion(member, questㄹㅊion);
         }
 
         /* 회원 투표유무 확인 */
@@ -278,7 +278,7 @@ public class ArticleServiceImpl implements ArticleService {
                     String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
                             .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
                     /* 질문 작성자에게 FCM 알림 전송 */
-                    fcmService.sendMessage(fcmToken, "새로운 의견이 등록됐습니다.", opinion);
+                    fcmService.sendMessage(fcmToken, "'"+question.getTitle()+"' 질문에 의견이 추가됐습니다.", opinion);
                 }
             } catch (Exception e) {
                 log.error("FCM Service Error: {}", e.getMessage());
@@ -353,7 +353,7 @@ public class ArticleServiceImpl implements ArticleService {
         try {
             /* 리스트에 담긴 토큰별로 FCM 알림 전송 */
             for(String fcmToken : list) {
-                fcmService.sendMessage(fcmToken, "새로운 답글이 등록됐습니다.", dto.getComment());
+                fcmService.sendMessage(fcmToken, "'"+poll.getQuestion().getTitle()+"' 질문에 답글이 추가됐습니다.", dto.getComment());
             }
         } catch (Exception e) {
             log.error("FCM Service Error: {}", e.getMessage());
