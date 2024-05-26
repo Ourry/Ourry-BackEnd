@@ -13,42 +13,30 @@ import java.util.List;
 public class QuestionDetailDTO {
     @NotBlank
     private String title;
-
     @NotBlank
     private String content;
-
     @NotBlank
     private String category;
-
     @NotBlank
     private Long memberId;
-
     @NotBlank
     private String nickname;
-
     @NotBlank
     private char alarmYN;
-
     @NotBlank
     private char polled;
-
     @NotBlank
     @JsonSetter("pollCnt")
     private int pollCnt;
-
     @NotBlank
     @JsonSetter("responseCnt")
     private int responseCnt;
-
     @NotBlank
     private LocalDateTime createdAt;
-
     @NotBlank
     private List<ChoiceDTO> choices;
-
     @NotBlank
     private List<SolutionDTO> solutions;
-
     @NotBlank
     private List<ReplyDTO> replies;
 }

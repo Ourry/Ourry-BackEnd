@@ -1,5 +1,6 @@
 package com.bluewhaletech.Ourry.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Getter;
@@ -7,10 +8,10 @@ import lombok.Getter;
 @Getter
 @Builder
 public class EmailDTO {
-    @NotEmpty
+    @NotBlank
     private String email;
-    @NotEmpty
+    @NotBlank
     private String title;
-    @NotEmpty
+    @NotBlank
     private String text;
 }

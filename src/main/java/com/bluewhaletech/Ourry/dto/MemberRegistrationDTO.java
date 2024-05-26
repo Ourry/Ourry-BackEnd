@@ -1,18 +1,16 @@
 package com.bluewhaletech.Ourry.dto;
 
-import jakarta.validation.constraints.NotEmpty;
-import lombok.Builder;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 public class MemberRegistrationDTO {
-    @NotEmpty
+    @NotBlank
     private String email;
-    @NotEmpty
+    @NotBlank
     private String password;
-    @NotEmpty
+    @NotBlank
     private String nickname;
-    @NotEmpty
+    @NotBlank
     private String phone;
 }

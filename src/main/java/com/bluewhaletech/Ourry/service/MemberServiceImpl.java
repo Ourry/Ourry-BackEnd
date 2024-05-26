@@ -123,7 +123,7 @@ public class MemberServiceImpl implements MemberService {
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .nickname(dto.getNickname())
                 .phone(dto.getPhone())
-                .role(MemberRole.USER)
+                .role(MemberRole.MEMBER)
                 .fcmToken(fcmToken)
                 .build();
         memberRepository.save(member);

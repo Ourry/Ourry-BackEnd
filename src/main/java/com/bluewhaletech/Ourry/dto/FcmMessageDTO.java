@@ -10,6 +10,5 @@ import lombok.Getter;
 public class FcmMessageDTO {
     @JsonProperty("validate_only")
     private boolean validateOnly;
-
     private Message message;
 }

@@ -11,7 +11,6 @@ public class CategoryDTO {
     @NotBlank
     @JsonSetter("categoryId")
     private Long categoryId;
-
     @NotBlank
     private String name;
 }

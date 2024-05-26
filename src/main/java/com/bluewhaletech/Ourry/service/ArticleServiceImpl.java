@@ -55,14 +55,14 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<QuestionListDTO> getQuestionList() {
+    public List<QuestionDTO> getQuestionList() {
         List<Question> questions = Optional.ofNullable(questionRepository.findAll())
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
         return bringQuestionList(questions);
     }
 
     @Override
-    public List<QuestionListDTO> getQuestionList(Long categoryId) {
+    public List<QuestionDTO> getQuestionList(Long categoryId) {
         Category category = Optional.ofNullable(categoryRepository.findOne(categoryId))
                 .orElseThrow(() -> new CategoryNotFoundException("카테고리 정보가 존재하지 않습니다."));
         List<Question> questions = Optional.ofNullable(questionJpaRepository.findByCategory(category))
@@ -176,7 +176,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<QuestionListDTO> searchQuestionList(String searchKeyword) {
+    public List<QuestionDTO> searchQuestionList(String searchKeyword) {
         List<Question> questions = Optional.ofNullable(questionJpaRepository.searchQuestionList(searchKeyword))
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
         return bringQuestionList(questions);
@@ -278,7 +278,7 @@ public class ArticleServiceImpl implements ArticleService {
                     String fcmToken = Optional.ofNullable(memberJpaRepository.findFcmTokenByEmail(questionAuthorEmail))
                             .orElseThrow(() -> new FcmTokenNotFoundException("해당 회원에게 발급된 FCM 토큰이 없습니다."));
                     /* 질문 작성자에게 FCM 알림 전송 */
-                    fcmService.sendMessage(fcmToken, "새로운 의견이 등록됐습니다.", opinion);
+                    fcmService.sendMessage(fcmToken, "'"+question.getTitle()+"' 질문에 의견이 추가됐습니다.", opinion);
                 }
             } catch (Exception e) {
                 log.error("FCM Service Error: {}", e.getMessage());
@@ -353,7 +353,7 @@ public class ArticleServiceImpl implements ArticleService {
         try {
             /* 리스트에 담긴 토큰별로 FCM 알림 전송 */
             for(String fcmToken : list) {
-                fcmService.sendMessage(fcmToken, "새로운 답글이 등록됐습니다.", dto.getComment());
+                fcmService.sendMessage(fcmToken, "'"+poll.getQuestion().getTitle()+"' 질문에 답글이 추가됐습니다.", dto.getComment());
             }
         } catch (Exception e) {
             log.error("FCM Service Error: {}", e.getMessage());
@@ -389,8 +389,8 @@ public class ArticleServiceImpl implements ArticleService {
         alarm.setAlarmYN(dto.getAlarmYN());
     }
 
-    private List<QuestionListDTO> bringQuestionList(List<Question> questions) {
-        List<QuestionListDTO> list = new ArrayList<>();
+    private List<QuestionDTO> bringQuestionList(List<Question> questions) {
+        List<QuestionDTO> list = new ArrayList<>();
         for(Question question : questions) {
             /* 질문별 투표 데이터 목록 */
             List<Poll> polls = Optional.ofNullable(pollJpaRepository.findByQuestion(question))
@@ -407,7 +407,7 @@ public class ArticleServiceImpl implements ArticleService {
                 }
             }
 
-            QuestionListDTO dto = QuestionListDTO.builder()
+            QuestionDTO dto = QuestionDTO.builder()
                     .questionId(question.getQuestionId())
                     .title(question.getTitle())
                     .content(question.getContent())
