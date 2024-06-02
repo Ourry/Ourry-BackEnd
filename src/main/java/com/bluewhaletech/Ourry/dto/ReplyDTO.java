@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 @Builder
 public class ReplyDTO {
     @NotBlank
+    @JsonSetter("replyId")
+    private Long replyId;
+    @NotBlank
     private int sequence;
     @NotBlank
     private String comment;

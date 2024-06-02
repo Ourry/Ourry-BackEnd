@@ -11,30 +11,26 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Report {
     @Builder
-    protected Report(Long reportId, int reportCnt, ArticleType articleType, String content, Member member) {
-        this.reportId = reportId;
-        this.reportCnt = reportCnt;
+    public Report(Long id, ReportStatus status, ArticleType articleType, Long articleId) {
+        this.id = id;
+        this.status = status;
         this.articleType = articleType;
-        this.content = content;
-        this.member = member;
+        this.articleId = articleId;
     }
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "report_id", nullable = false)
-    private Long reportId;
+    private Long id;
 
-    @Column(name = "report_cnt", nullable = false)
-    private int reportCnt;
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ReportStatus status;
 
     @Column(name = "article_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private ArticleType articleType;
 
-    @Column(name = "content", nullable = false)
-    private String content;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
-    @Column(name = "member_id", nullable = false)
-    private Member member;
+    @Column(name = "article_id", nullable = false)
+    private Long articleId;
 }

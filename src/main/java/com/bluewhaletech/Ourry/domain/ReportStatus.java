@@ -6,10 +6,10 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public enum ArticleType {
-    QUESTION(0, "질문"),
-    SOLUTION(1, "솔루션"),
-    REPLY(2, "답글");
+public enum ReportStatus {
+    RECEIVED(0, "접수"),
+    UNDERWAY(1, "처리중"),
+    COMPLETED(2, "처리완료");
 
     private final int code;
     private final String name;
