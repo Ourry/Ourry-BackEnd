@@ -9,7 +9,7 @@ import lombok.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Member extends BaseEntity {
+public class Member extends BaseTimeEntity {
     @Builder
     protected Member(Long memberId, String email, String password, String nickname, String phone, MemberRole role,  String fcmToken) {
         this.memberId = memberId;

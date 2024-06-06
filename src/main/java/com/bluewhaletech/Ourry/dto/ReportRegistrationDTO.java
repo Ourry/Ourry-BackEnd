@@ -1,7 +1,5 @@
 package com.bluewhaletech.Ourry.dto;
 
-import com.bluewhaletech.Ourry.domain.ArticleType;
-import com.bluewhaletech.Ourry.domain.ReportCategory;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -9,14 +7,17 @@ import lombok.Getter;
 @Getter
 public class ReportRegistrationDTO {
     @NotBlank
+    @JsonSetter("articleId")
     private Long articleId;
     @NotBlank
-    private ArticleType articleType;
+    @JsonSetter("articleTypeId")
+    private int articleTypeId;
     @NotBlank
-    private ReportCategory reportCategory;
+    @JsonSetter("categoryId")
+    private int categoryId;
     @NotBlank
     private String reason;
     @NotBlank
-    @JsonSetter("targetId")
-    private Long targetId;
+    @JsonSetter("targetEmail")
+    private String targetEmail;
 }

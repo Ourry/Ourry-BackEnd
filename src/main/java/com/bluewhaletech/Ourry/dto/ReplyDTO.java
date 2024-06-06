@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 @Builder
 public class ReplyDTO {
     @NotBlank
+    @JsonSetter("solutionId")
+    private Long solutionId;
+    @NotBlank
     @JsonSetter("replyId")
     private Long replyId;
     @NotBlank
@@ -18,11 +21,11 @@ public class ReplyDTO {
     @NotBlank
     private String comment;
     @NotBlank
+    @JsonSetter("memberId")
+    private Long memberId;
+    @NotBlank
     private String nickname;
     @NotBlank
     @JsonSetter("createdAt")
     private LocalDateTime createdAt;
-    @NotBlank
-    @JsonSetter("solutionId")
-    private Long solutionId;
 }
