@@ -68,7 +68,8 @@ public class SecurityConfig {
 
         /* 인증을 요구하지 않는 API 목록 정의 */
         http.authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> authorizationManagerRequestMatcherRegistry
-                .requestMatchers("/member/createAccount").permitAll() // 회원가입 API
+                .requestMatchers("/admin/createAdmin").permitAll() // ADMIN 회원가입 API
+                .requestMatchers("/member/createAccount").permitAll() // MEMBER 13회원가입 API
                 .requestMatchers("/member/memberLogin").permitAll() // 로그인 API
                 .requestMatchers("/member/sendAuthenticationCode").permitAll() // 이메일 인증코드 발송 API
                 .requestMatchers("/member/emailAuthentication").permitAll() // 이메일 인증 API
@@ -82,9 +83,10 @@ public class SecurityConfig {
                 .requestMatchers("/article/getQuestionDetail").permitAll()
 
                 /* MEMBER 권한 설정 */
-                .requestMatchers("/article/addQuestion").hasAnyRole("MEMBER", "ADMIN")
-                .requestMatchers("/article/answerQuestion").hasAnyRole("MEMBER", "ADMIN")
-                .requestMatchers("/article/addReply").hasAnyRole("MEMBER", "ADMIN")
+                .requestMatchers("/article/addQuestion").hasRole("MEMBER")
+                .requestMatchers("/article/answerQuestion").hasRole("MEMBER")
+                .requestMatchers("/article/addReply").hasRole("MEMBER")
+                .requestMatchers("/report/addReport").hasRole("MEMBER")
                 .anyRequest().authenticated() // 위 URL 목록을 제외한 나머지 요청에 대해 인증 수행
         );
         return http.build();

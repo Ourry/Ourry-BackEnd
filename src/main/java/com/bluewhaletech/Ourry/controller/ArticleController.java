@@ -26,7 +26,7 @@ public class ArticleController {
     }
 
     @GetMapping("/article/getQuestionList/{categoryId}")
-    public ResponseEntity<Object> getQuestionList(@PathVariable Long categoryId) {
+    public ResponseEntity<Object> getQuestionList(@PathVariable int categoryId) {
         return ResponseEntity.ok().body(articleService.getQuestionList(categoryId));
     }
 

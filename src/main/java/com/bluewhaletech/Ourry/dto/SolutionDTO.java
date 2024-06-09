@@ -18,11 +18,11 @@ public class SolutionDTO {
     @NotBlank
     private String opinion;
     @NotBlank
+    @JsonSetter("createdAt")
+    private LocalDateTime createdAt;
+    @NotBlank
     @JsonSetter("memberId")
     private Long memberId;
     @NotBlank
     private String nickname;
-    @NotBlank
-    @JsonSetter("createdAt")
-    private LocalDateTime createdAt;
 }

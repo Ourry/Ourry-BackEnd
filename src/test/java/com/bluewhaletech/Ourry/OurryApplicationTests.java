@@ -1,22 +1,13 @@
 package com.bluewhaletech.Ourry;
 
-import com.bluewhaletech.Ourry.domain.*;
-import com.bluewhaletech.Ourry.exception.QuestionNotFoundException;
 import com.bluewhaletech.Ourry.jwt.JwtProvider;
 import com.bluewhaletech.Ourry.repository.*;
 import com.bluewhaletech.Ourry.service.MemberServiceImpl;
 import com.bluewhaletech.Ourry.util.RedisBlackListManagement;
 import com.bluewhaletech.Ourry.util.RedisEmailAuthentication;
-import jakarta.transaction.Transactional;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @SpringBootTest
 class OurryApplicationTests {
@@ -32,8 +23,6 @@ class OurryApplicationTests {
 	private MemberRepository memberRepository;
 	@Autowired
 	private QuestionRepository questionRepository;
-	@Autowired
-	private CategoryRepository categoryRepository;
 	@Autowired
 	private ChoiceRepository choiceRepository;
 	@Autowired

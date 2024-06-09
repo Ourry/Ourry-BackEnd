@@ -14,7 +14,7 @@ public class QuestionRegistrationDTO {
     private String content;
     @NotBlank
     @JsonSetter("categoryId")
-    private Long categoryId;
+    private int categoryId;
     @NotBlank
     private List<ChoiceDTO> choices;
 }

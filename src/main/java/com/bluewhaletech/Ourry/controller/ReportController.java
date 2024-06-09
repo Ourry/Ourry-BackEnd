@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @Controller
 public class ReportController {
@@ -42,10 +43,9 @@ public class ReportController {
     /**
      * 신고 등록하기 API
      * @param dto (
-     * @return
      */
     @PostMapping("/report/addReport")
-    public ResponseEntity<Object> addReport(HttpServletRequest request, ReportRegistrationDTO dto) {
+    public ResponseEntity<Object> addReport(HttpServletRequest request, @RequestBody ReportRegistrationDTO dto) {
         String accessToken = request.getHeader("Authorization");
         reportService.addReport(accessToken, dto);
         return ResponseEntity.ok().build();
