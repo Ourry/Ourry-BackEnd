@@ -42,11 +42,6 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new MemberNotFoundException("신고자 정보가 존재하지 않습니다."));
 
         /* 피신고자 존재유무 확인 */
-        System.out.println("articleId = " + dto.getArticleId());
-        System.out.println("dto.getArticleTypeId() = " + dto.getArticleTypeId());
-        System.out.println("dto.getCategoryId() = " + dto.getCategoryId());
-        System.out.println("dto.getReason() = " + dto.getReason());
-        System.out.println("dto.getTargetEmail() = " + dto.getTargetEmail());
         Member target = Optional.ofNullable(memberJpaRepository.findByEmail(dto.getTargetEmail()))
                 .orElseThrow(() -> new MemberNotFoundException("피신고자 정보가 존재하지 않습니다."));
 

@@ -75,14 +75,12 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public QuestionDetailDTO getQuestionDetail(String accessToken, Long questionId) {
-        /* 비회원 확인 */
-        Member member = null;
-        if(accessToken != null) {
-            /* 회원 존재유무 확인 */
-            String email = tokenProvider.getTokenSubject(accessToken.substring(7));
-            member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
-                    .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
-        }
+        /* Access Token으로부터 이메일 가져오기 */
+        String email = tokenProvider.getTokenSubject(accessToken.substring(7));
+
+        /* 회원 존재유무 확인 */
+        Member member = Optional.ofNullable(memberJpaRepository.findByEmail(email))
+                .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
         /* 질문 존재유무 확인 */
         Question question = Optional.ofNullable(questionRepository.findOne(questionId))

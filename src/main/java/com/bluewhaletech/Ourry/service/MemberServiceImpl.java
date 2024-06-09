@@ -117,7 +117,7 @@ public class MemberServiceImpl implements MemberService {
 //            throw new EmailAuthenticationNotCompletedException("이메일 인증이 완료되지 않았습니다.");
 //        }
 
-        /* 회원가입 */
+        /* MEMBER 회원가입 */
         Member member = Member.builder()
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
