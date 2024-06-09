@@ -7,7 +7,7 @@ import java.util.List;
 public interface ArticleService {
     List<QuestionDTO> getQuestionList();
 
-    List<QuestionDTO> getQuestionList(Long categoryId);
+    List<QuestionDTO> getQuestionList(int categoryId);
 
     QuestionDetailDTO getQuestionDetail(String accessToken, Long questionId);
 

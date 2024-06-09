@@ -22,7 +22,6 @@ public class ArticleServiceImpl implements ArticleService {
     private final MemberJpaRepository memberJpaRepository;
     private final QuestionRepository questionRepository;
     private final QuestionJpaRepository questionJpaRepository;
-    private final CategoryRepository categoryRepository;
     private final ChoiceRepository choiceRepository;
     private final ChoiceJpaRepository choiceJpaRepository;
     private final PollRepository pollRepository;
@@ -33,15 +32,15 @@ public class ArticleServiceImpl implements ArticleService {
     private final ReplyJpaRepository replyJpaRepository;
     private final AlarmRepository alarmRepository;
     private final AlarmJpaRepository alarmJpaRepository;
+    private final EnumManagement enumManagement;
 
     @Autowired
-    public ArticleServiceImpl(JwtProvider tokenProvider, FcmServiceImpl fcmService, MemberJpaRepository memberJpaRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, CategoryRepository categoryRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, AlarmRepository alarmRepository, AlarmJpaRepository alarmJpaRepository) {
+    public ArticleServiceImpl(JwtProvider tokenProvider, FcmServiceImpl fcmService, MemberJpaRepository memberJpaRepository, QuestionRepository questionRepository, QuestionJpaRepository questionJpaRepository, ChoiceRepository choiceRepository, ChoiceJpaRepository choiceJpaRepository, PollRepository pollRepository, PollJpaRepository pollJpaRepository, SolutionRepository solutionRepository, SolutionJpaRepository solutionJpaRepository, ReplyRepository replyRepository, ReplyJpaRepository replyJpaRepository, AlarmRepository alarmRepository, AlarmJpaRepository alarmJpaRepository, EnumManagement enumManagement) {
         this.tokenProvider = tokenProvider;
         this.fcmService = fcmService;
         this.memberJpaRepository = memberJpaRepository;
         this.questionRepository = questionRepository;
         this.questionJpaRepository = questionJpaRepository;
-        this.categoryRepository = categoryRepository;
         this.choiceRepository = choiceRepository;
         this.choiceJpaRepository = choiceJpaRepository;
         this.pollRepository = pollRepository;
@@ -52,6 +51,7 @@ public class ArticleServiceImpl implements ArticleService {
         this.replyJpaRepository = replyJpaRepository;
         this.alarmRepository = alarmRepository;
         this.alarmJpaRepository = alarmJpaRepository;
+        this.enumManagement = enumManagement;
     }
 
     @Override
@@ -62,9 +62,12 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public List<QuestionDTO> getQuestionList(Long categoryId) {
-        Category category = Optional.ofNullable(categoryRepository.findOne(categoryId))
-                .orElseThrow(() -> new CategoryNotFoundException("카테고리 정보가 존재하지 않습니다."));
+    public List<QuestionDTO> getQuestionList(int categoryId) {
+        /* 카테고리 존재유무 확인 */
+        if(categoryId < 0 || categoryId >= ArticleCategory.values().length) {
+            throw new CategoryNotFoundException("잘못된 카테고리 유형입니다. 다시 확인해주세요.");
+        }
+        ArticleCategory category = enumManagement.getArticleCategoryMap().get(categoryId);
         List<Question> questions = Optional.ofNullable(questionJpaRepository.findByCategory(category))
                 .orElseThrow(() -> new QuestionLoadingFailedException("질문 목록을 불러오는 과정에서 오류가 발생했습니다."));
         return bringQuestionList(questions);
@@ -194,8 +197,10 @@ public class ArticleServiceImpl implements ArticleService {
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
         /* 카테고리 존재유무 확인 */
-        Category category = Optional.ofNullable(categoryRepository.findOne(dto.getCategoryId()))
-                .orElseThrow(() -> new CategoryNotFoundException("존재하지 않는 카테고리입니다."));
+        if(dto.getCategoryId() < 0 || dto.getCategoryId() >= ArticleCategory.values().length) {
+            throw new CategoryNotFoundException("잘못된 카테고리 유형입니다. 다시 확인해주세요.");
+        }
+        ArticleCategory category = enumManagement.getArticleCategoryMap().get(dto.getCategoryId());
 
         Question question = Question.builder()
                 .title(dto.getTitle())
