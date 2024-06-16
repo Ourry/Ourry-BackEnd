@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -18,17 +19,17 @@ public class ReportController {
         this.reportService = reportService;
     }
 
-    /*
+    /**
      * 신고 목록 불러오기 API
-     * @return
-
+     * @return List<ReportDTO> (articleType, articleId, status, targetEmail, targetNickname, reportCnt, createdAt)
+     */
     @GetMapping("/report/getReportList")
     public ResponseEntity<Object> getReportList(HttpServletRequest request) {
         String accessToken = request.getHeader("Authorization");
         return ResponseEntity.ok().body(reportService.getReportList(accessToken));
     }
 
-    /**
+    /*
      * 신고 상세내용 불러오기 API
      * @param dto (reportId)
      * @return
@@ -42,7 +43,7 @@ public class ReportController {
 
     /**
      * 신고 등록하기 API
-     * @param dto (
+     * @param dto (email, password, nickname, phone)
      */
     @PostMapping("/report/addReport")
     public ResponseEntity<Object> addReport(HttpServletRequest request, @RequestBody ReportRegistrationDTO dto) {

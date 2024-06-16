@@ -7,11 +7,11 @@ import lombok.Getter;
 @Getter
 public class ReportRegistrationDTO {
     @NotBlank
-    @JsonSetter("articleId")
-    private Long articleId;
-    @NotBlank
     @JsonSetter("articleTypeId")
     private int articleTypeId;
+    @NotBlank
+    @JsonSetter("articleId")
+    private Long articleId;
     @NotBlank
     @JsonSetter("categoryId")
     private int categoryId;

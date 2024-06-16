@@ -42,6 +42,12 @@ public enum ErrorCode {
     ANSWER_TO_ONESELF("Q007", "본인이 질문한 글에 의견을 제출했습니다.", 400),
     ALARM_SETTING_NOT_FOUND("Q008", "질문에 대한 알림 설정 기록이 존재하지 않습니다.", 400),
 
+    // 신고
+    REPORT_TO_ONESELF("R001", "본인이 작성한 게시물을 신고했습니다.", 400),
+    REPORT_LOADING_FAILED("R002", "신고 게시물을 불러오지 못했습니다.", 400),
+    REPORT_DETAIL_LOADING_FAILED("R003", "신고 사유를 불러오지 못했습니다.", 400),
+    REPORT_HISTORY_EXIST("R004", "해당 게시물에 대한 신고이력이 존재합니다.", 400),
+
     // 400
     BAD_REQUEST("400", "잘못된 요청입니다.", 400),
     // 401
