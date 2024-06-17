@@ -31,7 +31,7 @@ public class ArticleController {
     }
 
     @GetMapping("/article/getQuestionDetail")
-    public ResponseEntity<Object> getQuestionDetail(HttpServletRequest request, @RequestParam(value = "questionId") Long questionId) {
+    public ResponseEntity<Object> getQuestionDetail(HttpServletRequest request, @RequestParam(value = "questionId") int questionId) {
         String accessToken = request.getHeader("Authorization");
         return ResponseEntity.ok().body(articleService.getQuestionDetail(accessToken, questionId));
     }

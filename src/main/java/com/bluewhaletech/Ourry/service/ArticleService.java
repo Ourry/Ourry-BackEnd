@@ -9,7 +9,7 @@ public interface ArticleService {
 
     List<QuestionDTO> getQuestionList(int categoryId);
 
-    QuestionDetailDTO getQuestionDetail(String accessToken, Long questionId);
+    QuestionDetailDTO getQuestionDetail(String accessToken, int questionId);
 
     List<QuestionDTO> searchQuestionList(String searchKeyword);
 

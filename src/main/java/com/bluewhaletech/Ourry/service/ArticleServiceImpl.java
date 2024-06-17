@@ -74,7 +74,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public QuestionDetailDTO getQuestionDetail(String accessToken, Long questionId) {
+    public QuestionDetailDTO getQuestionDetail(String accessToken, int questionId) {
         /* Access Token으로부터 이메일 가져오기 */
         String email = tokenProvider.getTokenSubject(accessToken.substring(7));
 
@@ -83,7 +83,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .orElseThrow(() -> new MemberNotFoundException("회원 정보가 존재하지 않습니다."));
 
         /* 질문 존재유무 확인 */
-        Question question = Optional.ofNullable(questionRepository.findOne(questionId))
+        Question question = Optional.ofNullable(questionRepository.findOne((long) questionId))
                 .orElseThrow(() -> new QuestionNotFoundException("질문 정보가 존재하지 않습니다."));
 
         /* 알림 수신유무 확인 */
@@ -96,7 +96,7 @@ public class ArticleServiceImpl implements ArticleService {
         char polled = 'A'; // 작성자(A)
         if(member == null) {
             polled = 'N'; // 미투표(N)
-        } else if(!questionJpaRepository.existsByMemberAndQuestionId(member, questionId)) {
+        } else if(!questionJpaRepository.existsByMemberAndQuestionId(member, (long) questionId)) {
             polled = pollJpaRepository.existsByMemberAndQuestion(member, question) ? 'Y' : 'N'; // 투표(Y), 미투표(N)
         }
 
@@ -117,48 +117,43 @@ public class ArticleServiceImpl implements ArticleService {
 
         /* 투표별 솔루션 데이터 목록 */
         List<SolutionDTO> solutions = new ArrayList<>();
-        for(Poll poll : polls) {
-            Solution solution = solutionJpaRepository.findByPoll(poll);
-            if(Optional.ofNullable(solution).isPresent()) {
-                SolutionDTO s = SolutionDTO.builder()
-                        .solutionId(solution.getPoll().getPollId())
-                        .sequence(poll.getChoice().getSequence())
-                        .opinion(solution.getOpinion())
-                        .createdAt(poll.getCreatedAt())
-                        .memberId(poll.getMember().getMemberId())
-                        .nickname(poll.getMember().getNickname())
-                        .build();
-                solutions.add(s);
-            }
-        }
 
-        /* 투표별 답글 데이터 목록 */
-        List<ReplyDTO> replies = new ArrayList<>();
+        int replyCnt = 0;
         for(Poll poll : polls) {
-            if(solutionJpaRepository.existsByPoll(poll)) {
-                Solution solution = solutionJpaRepository.findByPoll(poll);
-                for(Reply reply : replyJpaRepository.findBySolution(solution)) {
-                    if(Optional.ofNullable(reply).isPresent()) {
-                        ReplyDTO r = ReplyDTO.builder()
-                                .replyId(reply.getReplyId())
-                                .sequence(reply.getSolution().getPoll().getChoice().getSequence())
-                                .comment(reply.getComment())
-                                .nickname(reply.getMember().getNickname())
-                                .createdAt(reply.getCreatedAt())
-                                .solutionId(poll.getPollId())
-                                .build();
-                        replies.add(r);
-                    }
+            /* 솔루션 존재여부 검증 */
+            Solution solution = Optional.ofNullable(solutionJpaRepository.findByPoll(poll))
+                    .orElseThrow(() -> new SolutionNotFoundException("존재하지 않는 솔루션입니다."));
+            /* 솔루션별 답글 데이터 목록 */
+            List<ReplyDTO> replies = new ArrayList<>();
+            for(Reply reply : replyJpaRepository.findBySolution(solution)) {
+                if(Optional.ofNullable(reply).isPresent()) {
+                    ReplyDTO r = ReplyDTO.builder()
+                            .replyId(reply.getReplyId())
+                            .sequence(reply.getSolution().getPoll().getChoice().getSequence())
+                            .comment(reply.getComment())
+                            .nickname(reply.getMember().getNickname())
+                            .createdAt(reply.getCreatedAt())
+                            .build();
+                    replies.add(r);
+                    replyCnt++;
                 }
             }
+            SolutionDTO s = SolutionDTO.builder()
+                    .solutionId(solution.getPoll().getPollId())
+                    .sequence(poll.getChoice().getSequence())
+                    .opinion(solution.getOpinion())
+                    .createdAt(poll.getCreatedAt())
+                    .memberId(poll.getMember().getMemberId())
+                    .nickname(poll.getMember().getNickname())
+                    .replies(replies)
+                    .build();
+            solutions.add(s);
         }
 
         /* 비회원과 미응답자는 솔루션 및 답글 정보 확인 불가 */
         int solutionCnt = solutions.size();
-        int replyCnt = replies.size();
         if(polled == 'N') {
             solutions = null;
-            replies = null;
         }
         return QuestionDetailDTO.builder()
                 .title(question.getTitle())
@@ -173,7 +168,6 @@ public class ArticleServiceImpl implements ArticleService {
                 .createdAt(question.getCreatedAt())
                 .choices(choices)
                 .solutions(solutions)
-                .replies(replies)
                 .build();
     }
 
