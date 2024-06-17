@@ -16,12 +16,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReportDetail {
     @Builder
-    public ReportDetail(Long id, ReportCategory category, String reason, Member author, Member target) {
+    public ReportDetail(Long id, ReportCategory category, String reason, Member author, Member target, Report report) {
         this.id = id;
         this.category = category;
         this.reason = reason;
         this.author = author;
         this.target = target;
+        this.report = report;
     }
 
     @Id
@@ -36,6 +37,10 @@ public class ReportDetail {
     @Column(name = "reason", nullable = false)
     private String reason;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
+    private LocalDateTime createdAt;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "author_id", nullable = false)
     private Member author;
@@ -44,7 +49,7 @@ public class ReportDetail {
     @JoinColumn(name = "target_id", nullable = false)
     private Member target;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    @CreatedDate
-    private LocalDateTime createdAt;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL)
+    @JoinColumn(name = "report_id", nullable = false)
+    private Report report;
 }

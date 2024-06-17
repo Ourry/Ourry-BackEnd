@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -25,4 +26,6 @@ public class SolutionDTO {
     private Long memberId;
     @NotBlank
     private String nickname;
+    @NotBlank
+    private List<ReplyDTO> replies;
 }

@@ -37,6 +37,4 @@ public class QuestionDetailDTO {
     private List<ChoiceDTO> choices;
     @NotBlank
     private List<SolutionDTO> solutions;
-    @NotBlank
-    private List<ReplyDTO> replies;
 }
